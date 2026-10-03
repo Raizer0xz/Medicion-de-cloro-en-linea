@@ -39,6 +39,15 @@ android {
 
 dependencies {
 
+    // Navegación y MVVM (Guía 10)
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // Tamaño de pantalla (Guía 9), la versión la maneja el BOM de Compose
+    implementation("androidx.compose.material3:material3-window-size-class")
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
