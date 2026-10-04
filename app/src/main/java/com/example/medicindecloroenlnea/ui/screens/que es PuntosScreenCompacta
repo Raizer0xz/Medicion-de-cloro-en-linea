@@ -1,0 +1,11 @@
+Qué es cada pieza:
+
+Recibe el state (los datos que prepara el ViewModel) y una función onGranjaClick (qué hacer cuando se toca una granja). La pantalla no busca datos ella misma, solo dibuja lo que le dan. Eso es MVVM en acción.
+Dibuja una Column con el título, los botones de granjas y la lista de puntos.
+LazyColumn es una lista que solo dibuja lo que cabe en pantalla, ideal para listas largas.
+El @Preview crea datos de ejemplo a mano para poder ver la pantalla en Android Studio sin ejecutar la app.
+viewModel(): pide el GranjasViewModel (el que ya hiciste).
+collectAsStateWithLifecycle(): se queda escuchando el StateFlow del ViewModel. Cuando los datos cambian, la pantalla se redibuja sola.
+obtenerWindowSizeClass(): tu archivo WindowSizeUtils, que averigua el ancho de la pantalla.
+when (...): elige una de las tres pantallas según el ancho. El else cubre Expandida.
+viewModel::seleccionarGranja: lo que pasa cuando el usuario toca una granja. La pantalla no decide nada, solo le avisa al ViewModel.
