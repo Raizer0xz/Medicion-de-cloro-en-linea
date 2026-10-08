@@ -1,0 +1,5 @@
+Qué es cada pieza:
+
+colorDeEstado: una función normal que traduce el estado a un color (la misma idea del when de calcularEstado).
+PuntoItem: la tarjeta de un punto. Es una Row (horizontal) con un círculo de color, el nombre y hora en una Column (vertical), y el nivel a la derecha.
+SelectorGranjas: una fila deslizable de botones, uno por granja.
