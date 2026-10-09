@@ -45,6 +45,8 @@ dependencies {
 
     // Tamaño de pantalla (Guía 9), la versión la maneja el BOM de Compose
     implementation("androidx.compose.material3:material3-window-size-class")
+    //agregar solo la librería de íconos básicos
+    implementation("androidx.compose.material:material-icons-core")
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
