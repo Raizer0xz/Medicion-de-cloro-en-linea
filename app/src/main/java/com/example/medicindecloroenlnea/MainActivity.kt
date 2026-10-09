@@ -16,6 +16,7 @@ import com.example.medicindecloroenlnea.ui.theme.MediciónDeCloroEnLíneaTheme
 import com.example.medicindecloroenlnea.ui.viewmodels.MainViewModel
 import kotlinx.coroutines.flow.collectLatest
 import com.example.medicindecloroenlnea.ui.screens.PuntosHomeScreen
+import com.example.medicindecloroenlnea.ui.screens.AlertasScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,6 +53,7 @@ class MainActivity : ComponentActivity() {
                     composable(AppRoutes.Puntos.route) { PuntosScreen() }
                     //composable(AppRoutes.Resumen.route) { ResumenScreen() }
                     composable(AppRoutes.Puntos.route) { PuntosHomeScreen(viewModel) }
+                    composable(AppRoutes.Alertas.route) { AlertasScreen(viewModel) }
                 }
             }
         }
