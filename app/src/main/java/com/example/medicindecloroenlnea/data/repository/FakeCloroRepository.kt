@@ -52,4 +52,6 @@ class FakeCloroRepository : CloroRepository {
     override fun obtenerMediciones(puntoId: Int): Flow<List<Medicion>> =
         flowOf(mediciones.filter { it.puntoId == puntoId })
     override fun obtenerAlertas(): Flow<List<Alerta>> = flowOf(alertas)
+
+    override fun obtenerTodosLosPuntos():Flow<List<PuntoMedicion>> = flowOf(puntos)
 }

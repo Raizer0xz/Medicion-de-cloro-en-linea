@@ -8,4 +8,6 @@ interface CloroRepository {
     fun obtenerPuntos(granjaId: Int): Flow<List<PuntoMedicion>>
     fun obtenerMediciones(puntoId: Int): Flow<List<Medicion>>
     fun obtenerAlertas(): Flow<List<Alerta>>
+
+    fun obtenerTodosLosPuntos(): Flow<List<PuntoMedicion>>
 }
