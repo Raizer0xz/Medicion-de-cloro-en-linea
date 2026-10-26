@@ -14,7 +14,12 @@ import com.example.medicindecloroenlnea.ui.theme.MediciónDeCloroEnLíneaTheme
 import com.example.medicindecloroenlnea.ui.viewmodels.GranjasUiState
 
 @Composable
-fun PuntosScreenMediana(state: GranjasUiState, onGranjaClick: (Int) -> Unit) {
+fun PuntosScreenMediana(
+    state: GranjasUiState,
+    onGranjaClick: (Int) -> Unit,
+    onPuntoClick: ((Int) -> Unit)? = null,
+    onRegistrarMedicion: ((Int, Double) -> Unit)? = null
+) {
     Column(Modifier.fillMaxSize().padding(24.dp)) {
         Text("Puntos de medición", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(16.dp))
@@ -25,7 +30,15 @@ fun PuntosScreenMediana(state: GranjasUiState, onGranjaClick: (Int) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(state.puntos) { PuntoItem(it) }
+            items(state.puntos) { point ->
+                PuntoItem(
+                    point,
+                    onClick = onPuntoClick?.let { navigate -> { navigate(point.id) } },
+                    onRegistrarMedicion = onRegistrarMedicion?.let { save ->
+                        { value -> save(point.id, value) }
+                    }
+                )
+            }
         }
     }
 }
@@ -33,5 +46,5 @@ fun PuntosScreenMediana(state: GranjasUiState, onGranjaClick: (Int) -> Unit) {
 @Preview(name = "Mediana", widthDp = 700, heightDp = 900, showBackground = true)
 @Composable
 fun PreviewMediana() {
-    MediciónDeCloroEnLíneaTheme { PuntosScreenMediana(estadoEjemplo) {} }
+    MediciónDeCloroEnLíneaTheme { PuntosScreenMediana(estadoEjemplo, onGranjaClick = {}) }
 }

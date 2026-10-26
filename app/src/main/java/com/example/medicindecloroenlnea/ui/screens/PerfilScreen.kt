@@ -34,10 +34,15 @@ fun PerfilScreen(usuarioViewModel: UsuarioViewModel) {
                 DatoResumen(etiqueta = "Nombre", valor = usuario.nombre)
                 DatoResumen(etiqueta = "Correo", valor = usuario.correo)
                 DatoResumen(etiqueta = "Dirección", valor = usuario.direccion)
+                DatoResumen(etiqueta = "Rol", valor = usuario.rol.name)
+                DatoResumen(
+                    etiqueta = "Granjas asignadas",
+                    valor = usuario.granjasIds.joinToString().ifBlank { "Sin asignación" }
+                )
             }
         }
         Text(
-            "Perfil de prueba; los datos no se conservan al cerrar la aplicación.",
+            "La cuenta se conserva en la base local de este dispositivo.",
             style = MaterialTheme.typography.bodyMedium
         )
     }

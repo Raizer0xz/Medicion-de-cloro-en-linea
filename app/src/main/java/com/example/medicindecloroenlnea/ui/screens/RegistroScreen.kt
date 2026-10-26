@@ -17,18 +17,23 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.medicindecloroenlnea.domain.model.RolUsuario
 import com.example.medicindecloroenlnea.ui.viewmodels.UsuarioViewModel
 
 @Composable
@@ -39,6 +44,7 @@ fun RegistroScreen(
 ) {
     val usuario by usuarioViewModel.uiState.collectAsState()
     val errores by usuarioViewModel.errores.collectAsState()
+    var errorRegistro by remember { mutableStateOf<String?>(null) }
 
     Scaffold { innerPadding ->
         Column(
@@ -107,6 +113,40 @@ fun RegistroScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
             )
 
+            Text("Rol de demostración", style = MaterialTheme.typography.titleMedium)
+            RolUsuario.entries.forEach { rol ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = usuario.rol == rol,
+                        onClick = { usuarioViewModel.actualizarRol(rol) }
+                    )
+                    Text(
+                        text = when (rol) {
+                            RolUsuario.OPERARIO -> "Operario"
+                            RolUsuario.SUPERVISOR -> "Supervisor"
+                            RolUsuario.JEFATURA -> "Jefatura"
+                        }
+                    )
+                }
+            }
+            Text("Granjas asignadas", style = MaterialTheme.typography.titleMedium)
+            listOf(
+                1 to "Granja Los Aromos",
+                2 to "Granja El Roble",
+                3 to "Granja Santa Rosa"
+            ).forEach { (id, name) ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = id in usuario.granjasIds,
+                        onCheckedChange = { usuarioViewModel.alternarGranja(id) }
+                    )
+                    Text(name)
+                }
+            }
+            errores.granjas?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
+            }
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = usuario.aceptaTerminos,
@@ -126,12 +166,22 @@ fun RegistroScreen(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
+            errorRegistro?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
+            }
 
             Spacer(modifier = Modifier.height(4.dp))
             Button(
                 onClick = {
-                    if (usuarioViewModel.registrarUsuario()) {
-                        onRegistroExitoso()
+                    if (usuarioViewModel.validarFormulario()) {
+                        usuarioViewModel.registrarUsuario { registrado ->
+                            if (registrado) {
+                                errorRegistro = null
+                                onRegistroExitoso()
+                            } else {
+                                errorRegistro = "Ya existe una cuenta con ese correo."
+                            }
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()

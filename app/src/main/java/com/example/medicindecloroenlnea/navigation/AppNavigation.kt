@@ -27,10 +27,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.medicindecloroenlnea.ui.screens.HistorialScreen
 import com.example.medicindecloroenlnea.ui.screens.AlertasScreen
 import com.example.medicindecloroenlnea.ui.screens.InicioSesionScreen
 import com.example.medicindecloroenlnea.ui.screens.PerfilScreen
@@ -132,6 +135,7 @@ fun AppNavigation(
                         actions = {
                             TextButton(
                                 onClick = {
+                                    usuarioViewModel.cerrarSesion()
                                     navController.navigate(AppRoutes.Login.route) {
                                         popUpTo(AppRoutes.Puntos.route) { inclusive = true }
                                         launchSingleTop = true
@@ -211,13 +215,32 @@ fun AppNavigation(
                     )
                 }
                 composable(AppRoutes.Puntos.route) {
-                    PuntosScreen()
+                    PuntosScreen(
+                        usuario = usuarioViewModel.uiState.value,
+                        onIrAlHistorial = { puntoId ->
+                            navController.navigate(
+                                AppRoutes.Detalle(puntoId.toString()).buildRoute()
+                            )
+                        }
+                    )
                 }
                 composable(AppRoutes.Alertas.route) {
-                    AlertasScreen()
+                    AlertasScreen(usuario = usuarioViewModel.uiState.value)
                 }
                 composable(AppRoutes.Perfil.route) {
                     PerfilScreen(usuarioViewModel = usuarioViewModel)
+                }
+                composable(
+                    route = RUTA_DETALLE,
+                    arguments = listOf(navArgument("puntoId") { type = NavType.IntType })
+                ) { entry ->
+                    val puntoId = entry.arguments?.getInt("puntoId")
+                        ?: return@composable
+                    HistorialScreen(
+                        puntoId = puntoId,
+                        usuario = usuarioViewModel.uiState.value,
+                        onVolver = { navController.popBackStack() }
+                    )
                 }
             }
         }

@@ -17,7 +17,12 @@ import com.example.medicindecloroenlnea.ui.theme.MediciónDeCloroEnLíneaTheme
 import com.example.medicindecloroenlnea.ui.viewmodels.GranjasUiState
 
 @Composable
-fun PuntosScreenExpandida(state: GranjasUiState, onGranjaClick: (Int) -> Unit) {
+fun PuntosScreenExpandida(
+    state: GranjasUiState,
+    onGranjaClick: (Int) -> Unit,
+    onPuntoClick: ((Int) -> Unit)? = null,
+    onRegistrarMedicion: ((Int, Double) -> Unit)? = null
+) {
     Row(Modifier.fillMaxSize()) {
         // Panel izquierdo: lista de granjas
         Column(Modifier.width(280.dp).fillMaxHeight().padding(16.dp)) {
@@ -42,7 +47,15 @@ fun PuntosScreenExpandida(state: GranjasUiState, onGranjaClick: (Int) -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(state.puntos) { PuntoItem(it) }
+                items(state.puntos) { point ->
+                    PuntoItem(
+                        point,
+                        onClick = onPuntoClick?.let { navigate -> { navigate(point.id) } },
+                        onRegistrarMedicion = onRegistrarMedicion?.let { save ->
+                            { value -> save(point.id, value) }
+                        }
+                    )
+                }
             }
         }
     }
@@ -51,5 +64,5 @@ fun PuntosScreenExpandida(state: GranjasUiState, onGranjaClick: (Int) -> Unit) {
 @Preview(name = "Expandida", widthDp = 1100, heightDp = 800, showBackground = true)
 @Composable
 fun PreviewExpandida() {
-    MediciónDeCloroEnLíneaTheme { PuntosScreenExpandida(estadoEjemplo) {} }
+    MediciónDeCloroEnLíneaTheme { PuntosScreenExpandida(estadoEjemplo, onGranjaClick = {}) }
 }
