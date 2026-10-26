@@ -49,7 +49,7 @@ fun InicioSesionScreen(
                 style = MaterialTheme.typography.headlineMedium
             )
             Text(
-                text = "Inicia sesión con la cuenta ficticia que registraste en esta ejecución.",
+                text = "Inicia sesión con una cuenta registrada en este dispositivo.",
                 style = MaterialTheme.typography.bodyMedium
             )
             OutlinedTextField(
@@ -90,11 +90,13 @@ fun InicioSesionScreen(
             }
             Button(
                 onClick = {
-                    if (usuarioViewModel.iniciarSesion(correo, clave)) {
-                        error = null
-                        onInicioExitoso()
-                    } else {
-                        error = "Correo o contraseña incorrectos. Crea una cuenta si aún no tienes una."
+                    usuarioViewModel.iniciarSesion(correo, clave) { autenticado ->
+                        if (autenticado) {
+                            error = null
+                            onInicioExitoso()
+                        } else {
+                            error = "Correo o contraseña incorrectos. Crea una cuenta si aún no tienes una."
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()

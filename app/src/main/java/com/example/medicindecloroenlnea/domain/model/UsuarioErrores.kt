@@ -5,6 +5,7 @@ data class UsuarioErrores(
     val correo: String? = null,
     val clave: String? = null,
     val direccion: String? = null,
+    val granjas: String? = null,
     val aceptaTerminos: String? = null
 ) {
     fun tieneErrores(): Boolean =
@@ -12,5 +13,6 @@ data class UsuarioErrores(
             correo != null ||
             clave != null ||
             direccion != null ||
+            granjas != null ||
             aceptaTerminos != null
 }

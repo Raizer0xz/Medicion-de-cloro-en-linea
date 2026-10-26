@@ -45,6 +45,18 @@ fun ResumenScreen(
                     DatoResumen(etiqueta = "Correo", valor = usuario.correo)
                     DatoResumen(etiqueta = "Contraseña", valor = "********")
                     DatoResumen(etiqueta = "Dirección", valor = usuario.direccion)
+                    DatoResumen(
+                        etiqueta = "Rol",
+                        valor = when (usuario.rol) {
+                            com.example.medicindecloroenlnea.domain.model.RolUsuario.OPERARIO -> "Operario"
+                            com.example.medicindecloroenlnea.domain.model.RolUsuario.SUPERVISOR -> "Supervisor"
+                            com.example.medicindecloroenlnea.domain.model.RolUsuario.JEFATURA -> "Jefatura"
+                        }
+                    )
+                    DatoResumen(
+                        etiqueta = "Granjas asignadas",
+                        valor = usuario.granjasIds.joinToString { "Granja $it" }
+                    )
                 }
             }
             Button(

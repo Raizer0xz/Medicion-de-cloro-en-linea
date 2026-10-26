@@ -16,14 +16,27 @@ import com.example.medicindecloroenlnea.ui.theme.MediciónDeCloroEnLíneaTheme
 import com.example.medicindecloroenlnea.ui.viewmodels.GranjasUiState
 
 @Composable
-fun PuntosScreenCompacta(state: GranjasUiState, onGranjaClick: (Int) -> Unit) {
+fun PuntosScreenCompacta(
+    state: GranjasUiState,
+    onGranjaClick: (Int) -> Unit,
+    onPuntoClick: ((Int) -> Unit)? = null,
+    onRegistrarMedicion: ((Int, Double) -> Unit)? = null
+) {
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Text("Puntos de medición", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(12.dp))
         SelectorGranjas(state.granjas, state.granjaSeleccionada, onGranjaClick)
         Spacer(Modifier.height(12.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(state.puntos) { PuntoItem(it) }
+            items(state.puntos) { point ->
+                PuntoItem(
+                    point,
+                    onClick = onPuntoClick?.let { navigate -> { navigate(point.id) } },
+                    onRegistrarMedicion = onRegistrarMedicion?.let { save ->
+                        { value -> save(point.id, value) }
+                    }
+                )
+            }
         }
     }
 }
@@ -41,5 +54,5 @@ fun PreviewCompacta() {
         granjaSeleccionada = 1,
         cargando = false
     )
-    MediciónDeCloroEnLíneaTheme { PuntosScreenCompacta(estadoEjemplo) {} }
+    MediciónDeCloroEnLíneaTheme { PuntosScreenCompacta(estadoEjemplo, onGranjaClick = {}) }
 }
