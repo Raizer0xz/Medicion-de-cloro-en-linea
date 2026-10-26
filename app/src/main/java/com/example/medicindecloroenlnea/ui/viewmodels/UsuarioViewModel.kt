@@ -16,6 +16,8 @@ class UsuarioViewModel : ViewModel() {
     val errores: StateFlow<UsuarioErrores> = _errores.asStateFlow()
 
     private var intentoDeEnvio = false
+    private var correoRegistrado: String? = null
+    private var claveRegistrada: String? = null
 
     fun actualizarNombre(nombre: String) = actualizarEstado { it.copy(nombre = nombre) }
 
@@ -54,6 +56,17 @@ class UsuarioViewModel : ViewModel() {
         _errores.value = errores
         return !errores.tieneErrores()
     }
+
+    fun registrarUsuario(): Boolean {
+        if (!validarFormulario()) return false
+
+        correoRegistrado = _uiState.value.correo.trim()
+        claveRegistrada = _uiState.value.clave
+        return true
+    }
+
+    fun iniciarSesion(correo: String, clave: String): Boolean =
+        correoRegistrado == correo.trim() && claveRegistrada == clave
 
     private fun actualizarEstado(transform: (UsuarioUiState) -> UsuarioUiState) {
         _uiState.update(transform)

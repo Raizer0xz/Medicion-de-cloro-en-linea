@@ -20,7 +20,7 @@ import com.example.medicindecloroenlnea.ui.viewmodels.UsuarioViewModel
 @Composable
 fun ResumenScreen(
     usuarioViewModel: UsuarioViewModel,
-    onVolver: () -> Unit
+    onIrAlInicio: () -> Unit
 ) {
     val usuario by usuarioViewModel.uiState.collectAsState()
 
@@ -48,10 +48,10 @@ fun ResumenScreen(
                 }
             }
             Button(
-                onClick = onVolver,
+                onClick = onIrAlInicio,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Volver al registro")
+                Text("Ir al inicio")
             }
         }
     }

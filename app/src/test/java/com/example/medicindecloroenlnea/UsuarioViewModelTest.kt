@@ -43,6 +43,18 @@ class UsuarioViewModelTest {
         assertNull(viewModel.errores.value.aceptaTerminos)
     }
 
+    @Test
+    fun iniciarSesionSoloAceptaLaCuentaRegistrada() {
+        val viewModel = UsuarioViewModel()
+        ingresarDatosValidos(viewModel)
+
+        assertFalse(viewModel.iniciarSesion("usuario@example.com", "claveficticia"))
+        assertTrue(viewModel.registrarUsuario())
+        assertTrue(viewModel.iniciarSesion("usuario@example.com", "claveficticia"))
+        assertFalse(viewModel.iniciarSesion("otro@example.com", "claveficticia"))
+        assertFalse(viewModel.iniciarSesion("usuario@example.com", "incorrecta"))
+    }
+
     private fun ingresarDatosValidos(viewModel: UsuarioViewModel) {
         viewModel.actualizarNombre("Usuario de prueba")
         viewModel.actualizarCorreo("usuario@example.com")

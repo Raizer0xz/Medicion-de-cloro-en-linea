@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -33,7 +34,8 @@ import com.example.medicindecloroenlnea.ui.viewmodels.UsuarioViewModel
 @Composable
 fun RegistroScreen(
     usuarioViewModel: UsuarioViewModel,
-    onRegistroExitoso: () -> Unit
+    onRegistroExitoso: () -> Unit,
+    onIniciarSesion: () -> Unit
 ) {
     val usuario by usuarioViewModel.uiState.collectAsState()
     val errores by usuarioViewModel.errores.collectAsState()
@@ -128,13 +130,19 @@ fun RegistroScreen(
             Spacer(modifier = Modifier.height(4.dp))
             Button(
                 onClick = {
-                    if (usuarioViewModel.validarFormulario()) {
+                    if (usuarioViewModel.registrarUsuario()) {
                         onRegistroExitoso()
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Continuar")
+            }
+            TextButton(
+                onClick = onIniciarSesion,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("¿Ya tienes cuenta? Iniciar sesión")
             }
         }
     }
