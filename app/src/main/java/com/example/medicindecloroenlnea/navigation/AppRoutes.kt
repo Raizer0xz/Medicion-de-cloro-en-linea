@@ -1,4 +1,6 @@
 package com.example.medicindecloroenlnea.navigation
 
-class AppRoutes {
+object AppRoutes {
+    const val REGISTRO = "registro"
+    const val RESUMEN = "resumen"
 }
