@@ -7,8 +7,9 @@ sealed class AppRoutes(val route: String) {
     data object Puntos : AppRoutes("puntos_page")
     data object Alertas : AppRoutes("alertas_page")
     data object Resumen : AppRoutes("resumen_page")
+    data object Registro : AppRoutes("registro")
+    data object ResumenRegistro : AppRoutes("resumen_registro")
 
-    // Ruta con argumento: se le pasa el id del punto
     data class Detalle(val puntoId: String) : AppRoutes(RUTA_DETALLE) {
         fun buildRoute(): String = route.replace("{puntoId}", puntoId)
     }
