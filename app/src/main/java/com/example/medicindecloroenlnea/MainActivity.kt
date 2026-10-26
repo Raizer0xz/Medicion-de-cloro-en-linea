@@ -2,11 +2,12 @@ package com.example.medicindecloroenlnea
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.compose.setContent
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medicindecloroenlnea.navigation.AppNavigation
 import com.example.medicindecloroenlnea.ui.theme.MediciónDeCloroEnLíneaTheme
+import com.example.medicindecloroenlnea.ui.viewmodels.MainViewModel
 import com.example.medicindecloroenlnea.ui.viewmodels.UsuarioViewModel
 
 class MainActivity : ComponentActivity() {
@@ -16,7 +17,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             MediciónDeCloroEnLíneaTheme {
                 val usuarioViewModel: UsuarioViewModel = viewModel()
-                AppNavigation(usuarioViewModel = usuarioViewModel)
+                val mainViewModel: MainViewModel = viewModel()
+                AppNavigation(
+                    usuarioViewModel = usuarioViewModel,
+                    mainViewModel = mainViewModel
+                )
             }
         }
     }

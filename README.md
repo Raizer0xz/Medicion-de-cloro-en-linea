@@ -6,12 +6,12 @@ Aplicación académica para el proyecto de medición de cloro en línea.
 
 1. Crea una cuenta con datos ficticios desde la pantalla de inicio de sesión.
 2. Revisa el resumen del registro y pulsa **Ir al inicio**.
-3. Desde el inicio puedes ver el resumen de tu cuenta o cerrar sesión.
+3. Desde el menú puedes consultar los puntos de medición y cerrar sesión.
 4. Inicia sesión con el correo y la contraseña usados al crear la cuenta.
 
 La autenticación es simulada: la cuenta solo permanece disponible mientras la
 aplicación está abierta y se pierde al cerrar o reiniciar la app. Las pantallas
-de mediciones, alertas e historial se agregarán en próximas guías.
+de alertas e historial se agregarán en próximas guías.
 
 ## Ejecutar
 

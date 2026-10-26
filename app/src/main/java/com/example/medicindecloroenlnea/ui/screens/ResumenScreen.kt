@@ -51,7 +51,7 @@ fun ResumenScreen(
                 onClick = onIrAlInicio,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Ir al inicio")
+                Text("Ir al menú de mediciones")
             }
         }
     }

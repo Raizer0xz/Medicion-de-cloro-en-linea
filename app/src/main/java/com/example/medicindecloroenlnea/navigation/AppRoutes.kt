@@ -1,8 +1,16 @@
 package com.example.medicindecloroenlnea.navigation
 
-object AppRoutes {
-    const val INICIO_SESION = "inicio_sesion"
-    const val INICIO = "inicio"
-    const val REGISTRO = "registro"
-    const val RESUMEN = "resumen"
+const val RUTA_DETALLE = "detalle_page/{puntoId}"
+
+sealed class AppRoutes(val route: String) {
+    data object Login : AppRoutes("login_page")
+    data object Puntos : AppRoutes("puntos_page")
+    data object Alertas : AppRoutes("alertas_page")
+    data object Resumen : AppRoutes("resumen_page")
+    data object Registro : AppRoutes("registro")
+    data object ResumenRegistro : AppRoutes("resumen_registro")
+
+    data class Detalle(val puntoId: String) : AppRoutes(RUTA_DETALLE) {
+        fun buildRoute(): String = route.replace("{puntoId}", puntoId)
+    }
 }

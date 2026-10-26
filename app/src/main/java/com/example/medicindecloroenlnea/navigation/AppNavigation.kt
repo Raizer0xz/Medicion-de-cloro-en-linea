@@ -1,73 +1,97 @@
 package com.example.medicindecloroenlnea.navigation
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.medicindecloroenlnea.ui.screens.InicioScreen
+import com.example.medicindecloroenlnea.ui.screens.PuntosHomeScreen
 import com.example.medicindecloroenlnea.ui.screens.InicioSesionScreen
 import com.example.medicindecloroenlnea.ui.screens.RegistroScreen
 import com.example.medicindecloroenlnea.ui.screens.ResumenScreen
+import com.example.medicindecloroenlnea.ui.viewmodels.MainViewModel
 import com.example.medicindecloroenlnea.ui.viewmodels.UsuarioViewModel
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun AppNavigation(usuarioViewModel: UsuarioViewModel) {
+fun AppNavigation(
+    usuarioViewModel: UsuarioViewModel,
+    mainViewModel: MainViewModel
+) {
     val navController = rememberNavController()
+
+    LaunchedEffect(mainViewModel, navController) {
+        mainViewModel.navigationEvents.collectLatest { event ->
+            when (event) {
+                is NavigationEvent.NavigateTo -> {
+                    val destination = (event.route as? AppRoutes.Detalle)?.buildRoute()
+                        ?: event.route.route
+                    navController.navigate(destination) {
+                        event.popUpToRoute?.let {
+                            popUpTo(it.route) { inclusive = event.inclusive }
+                        }
+                        launchSingleTop = event.singleTop
+                        restoreState = true
+                    }
+                }
+
+                NavigationEvent.PopBackStack -> navController.popBackStack()
+                NavigationEvent.NavigateUp -> navController.navigateUp()
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
-        startDestination = AppRoutes.INICIO_SESION
+        startDestination = AppRoutes.Login.route
     ) {
-        composable(AppRoutes.INICIO_SESION) {
+        composable(AppRoutes.Login.route) {
             InicioSesionScreen(
                 usuarioViewModel = usuarioViewModel,
                 onInicioExitoso = {
-                    navController.navigate(AppRoutes.INICIO) {
-                        popUpTo(AppRoutes.INICIO_SESION) { inclusive = true }
+                    navController.navigate(AppRoutes.Puntos.route) {
+                        popUpTo(AppRoutes.Login.route) { inclusive = true }
                         launchSingleTop = true
                     }
                 },
                 onCrearCuenta = {
-                    navController.navigate(AppRoutes.REGISTRO)
+                    navController.navigate(AppRoutes.Registro.route)
                 }
             )
         }
-        composable(AppRoutes.REGISTRO) {
+        composable(AppRoutes.Registro.route) {
             RegistroScreen(
                 usuarioViewModel = usuarioViewModel,
                 onRegistroExitoso = {
-                    navController.navigate(AppRoutes.RESUMEN) {
+                    navController.navigate(AppRoutes.ResumenRegistro.route) {
                         launchSingleTop = true
                     }
                 },
                 onIniciarSesion = {
                     navController.popBackStack(
-                        route = AppRoutes.INICIO_SESION,
+                        route = AppRoutes.Login.route,
                         inclusive = false
                     )
                 }
             )
         }
-        composable(AppRoutes.RESUMEN) {
+        composable(AppRoutes.ResumenRegistro.route) {
             ResumenScreen(
                 usuarioViewModel = usuarioViewModel,
                 onIrAlInicio = {
-                    if (!navController.popBackStack(AppRoutes.INICIO, inclusive = false)) {
-                        navController.navigate(AppRoutes.INICIO) {
-                            popUpTo(AppRoutes.INICIO_SESION) { inclusive = true }
-                            launchSingleTop = true
-                        }
+                    navController.navigate(AppRoutes.Puntos.route) {
+                        popUpTo(AppRoutes.Login.route) { inclusive = true }
+                        launchSingleTop = true
                     }
                 }
             )
         }
-        composable(AppRoutes.INICIO) {
-            InicioScreen(
+        composable(AppRoutes.Puntos.route) {
+            PuntosHomeScreen(
                 usuarioViewModel = usuarioViewModel,
-                onVerPerfil = { navController.navigate(AppRoutes.RESUMEN) },
                 onCerrarSesion = {
-                    navController.navigate(AppRoutes.INICIO_SESION) {
-                        popUpTo(AppRoutes.INICIO) { inclusive = true }
+                    navController.navigate(AppRoutes.Login.route) {
+                        popUpTo(AppRoutes.Puntos.route) { inclusive = true }
                         launchSingleTop = true
                     }
                 }
