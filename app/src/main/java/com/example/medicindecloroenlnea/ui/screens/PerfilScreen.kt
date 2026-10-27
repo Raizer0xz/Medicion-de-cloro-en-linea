@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,6 +24,7 @@ fun PerfilScreen(usuarioViewModel: UsuarioViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -44,6 +47,9 @@ fun PerfilScreen(usuarioViewModel: UsuarioViewModel) {
         Text(
             "La cuenta se conserva en la base local de este dispositivo.",
             style = MaterialTheme.typography.bodyMedium
+        )
+        CamaraGaleriaScreen(
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
