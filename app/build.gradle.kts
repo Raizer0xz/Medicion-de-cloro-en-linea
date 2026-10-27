@@ -41,6 +41,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.10.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
+    implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
 
     // Tamaño de pantalla (Guía 9), la versión la maneja el BOM de Compose
