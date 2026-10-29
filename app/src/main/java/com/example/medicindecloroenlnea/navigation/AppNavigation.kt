@@ -34,6 +34,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.medicindecloroenlnea.ui.screens.HistorialScreen
+import com.example.medicindecloroenlnea.ui.screens.GestionPuntosScreen
 import com.example.medicindecloroenlnea.ui.screens.AlertasScreen
 import com.example.medicindecloroenlnea.ui.screens.InicioSesionScreen
 import com.example.medicindecloroenlnea.ui.screens.PerfilScreen
@@ -221,7 +222,16 @@ fun AppNavigation(
                             navController.navigate(
                                 AppRoutes.Detalle(puntoId.toString()).buildRoute()
                             )
+                        },
+                        onGestionarPuntos = {
+                            navController.navigate(AppRoutes.GestionPuntos.route)
                         }
+                    )
+                }
+                composable(AppRoutes.GestionPuntos.route) {
+                    GestionPuntosScreen(
+                        usuario = usuarioViewModel.uiState.value,
+                        onVolver = { navController.popBackStack() }
                     )
                 }
                 composable(AppRoutes.Alertas.route) {

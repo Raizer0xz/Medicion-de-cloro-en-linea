@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.Button
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medicindecloroenlnea.domain.model.UsuarioUiState
+import com.example.medicindecloroenlnea.domain.model.RolUsuario
 import com.example.medicindecloroenlnea.ui.viewmodels.GranjasViewModel
 import com.example.medicindecloroenlnea.utils.obtenerWindowSizeClass
 
@@ -22,6 +24,7 @@ import com.example.medicindecloroenlnea.utils.obtenerWindowSizeClass
 fun PuntosScreen(
     usuario: UsuarioUiState,
     onIrAlHistorial: (Int) -> Unit,
+    onGestionarPuntos: () -> Unit = {},
     viewModel: GranjasViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -45,6 +48,14 @@ fun PuntosScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                 color = MaterialTheme.colorScheme.error
             )
+        }
+        if (usuario.rol == RolUsuario.SUPERVISOR || usuario.rol == RolUsuario.JEFATURA) {
+            Button(
+                onClick = onGestionarPuntos,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text("Administrar puntos")
+            }
         }
         Box(Modifier.weight(1f)) {
             val onMeasure: (Int, Double) -> Unit = { pointId, value ->

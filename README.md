@@ -15,6 +15,12 @@ aplicación está abierta y se pierde al cerrar o reiniciar la app. Las pantalla
 de alertas usan mediciones ficticias del repositorio académico; el historial y
 las integraciones reales se agregarán en próximas guías.
 
+Los perfiles de supervisor y jefatura pueden administrar los puntos asignados
+desde **Puntos**. Un punto nuevo guarda su medición inicial en el historial y
+genera una alerta si el valor está fuera del rango normal. Para proteger la
+trazabilidad, los puntos con mediciones históricas no se pueden eliminar. Esta
+función usa Room sobre el archivo SQLite local existente.
+
 ## Ejecutar
 
 Abre el proyecto en Android Studio o genera el APK de depuración desde PowerShell:

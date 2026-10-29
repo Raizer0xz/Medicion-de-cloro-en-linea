@@ -76,13 +76,13 @@ class CloroLocalDatabase private constructor(context: Context) :
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             """CREATE TABLE granjas (
-                id INTEGER PRIMARY KEY,
+                id INTEGER NOT NULL PRIMARY KEY,
                 nombre TEXT NOT NULL
             )"""
         )
         db.execSQL(
             """CREATE TABLE puntos (
-                id INTEGER PRIMARY KEY,
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 granja_id INTEGER NOT NULL REFERENCES granjas(id),
                 nombre TEXT NOT NULL,
                 codigo TEXT NOT NULL,
@@ -98,7 +98,7 @@ class CloroLocalDatabase private constructor(context: Context) :
         )
         db.execSQL(
             """CREATE TABLE mediciones (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 punto_id INTEGER NOT NULL REFERENCES puntos(id),
                 nivel REAL NOT NULL,
                 fecha_hora TEXT NOT NULL,
@@ -110,7 +110,7 @@ class CloroLocalDatabase private constructor(context: Context) :
         )
         db.execSQL(
             """CREATE TABLE alertas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 punto_id INTEGER NOT NULL REFERENCES puntos(id),
                 medicion_id INTEGER NOT NULL REFERENCES mediciones(id),
                 nivel REAL NOT NULL,
@@ -153,11 +153,23 @@ class CloroLocalDatabase private constructor(context: Context) :
         )
         db.execSQL("CREATE INDEX idx_mediciones_punto_fecha ON mediciones(punto_id, fecha_hora DESC)")
         db.execSQL("CREATE INDEX idx_alertas_estado_fecha ON alertas(atendida, fecha_hora DESC)")
+        db.execSQL("CREATE INDEX idx_puntos_granja_id ON puntos(granja_id)")
+        db.execSQL("CREATE INDEX idx_alertas_punto_id ON alertas(punto_id)")
+        db.execSQL("CREATE INDEX idx_alertas_medicion_id ON alertas(medicion_id)")
+        db.execSQL("CREATE INDEX idx_alertas_medicion_verificada_id ON alertas(medicion_verificada_id)")
         sembrarDatos(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion == 1 && newVersion == 2) {
+            CloroSchemaMigration.upgradeFromVersionOne { db.execSQL(it) }
+            return
+        }
         throw IllegalStateException("Falta definir la migración de la base local $oldVersion -> $newVersion.")
+    }
+
+    fun notificarCambios() {
+        cambios.tryEmit(Unit)
     }
 
     fun obtenerGranjas(ids: List<Int>?): List<Pair<Int, String>> {
@@ -742,7 +754,7 @@ class CloroLocalDatabase private constructor(context: Context) :
 
     companion object {
         const val DATABASE_NAME = "medicion_cloro.db"
-        const val DATABASE_VERSION = 1
+        const val DATABASE_VERSION = 2
         const val MAX_NIVEL = 20.0
         const val SALT_BYTES = 16
         const val PBKDF2_ITERATIONS = 120_000
