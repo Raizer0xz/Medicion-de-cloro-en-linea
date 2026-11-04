@@ -8,6 +8,7 @@ import com.example.medicindecloroenlnea.data.local.room.CloroRoomDatabase
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -63,6 +64,35 @@ class CloroRoomMigrationInstrumentedTest {
                 medicion_verificada_id INTEGER REFERENCES mediciones(id)
             )"""
         )
+        legacyDatabase.execSQL(
+            """CREATE TABLE acciones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                alerta_id INTEGER NOT NULL REFERENCES alertas(id),
+                medicion_id INTEGER NOT NULL REFERENCES mediciones(id),
+                descripcion TEXT NOT NULL,
+                responsable TEXT NOT NULL,
+                fecha_hora TEXT NOT NULL,
+                estado TEXT NOT NULL DEFAULT 'ABIERTA'
+            )"""
+        )
+        legacyDatabase.execSQL(
+            """CREATE TABLE usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT NOT NULL,
+                correo TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                direccion TEXT NOT NULL,
+                rol TEXT NOT NULL,
+                sal TEXT NOT NULL,
+                clave_hash TEXT NOT NULL
+            )"""
+        )
+        legacyDatabase.execSQL(
+            """CREATE TABLE usuario_granjas (
+                usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+                granja_id INTEGER NOT NULL REFERENCES granjas(id),
+                PRIMARY KEY(usuario_id, granja_id)
+            )"""
+        )
         legacyDatabase.execSQL("INSERT INTO granjas VALUES (7, 'Granja migrada')")
         legacyDatabase.execSQL(
             """INSERT INTO puntos
@@ -78,6 +108,17 @@ class CloroRoomMigrationInstrumentedTest {
             """INSERT INTO alertas
                 (id, punto_id, medicion_id, nivel, fecha_hora, estado, direccion)
                 VALUES (31, 11, 21, 1.5, '2026-10-29T12:00:00', 'CRITICO', 'INSUFICIENTE')"""
+        )
+        legacyDatabase.execSQL(
+            """INSERT INTO usuarios
+                (id, nombre, correo, direccion, rol, sal, clave_hash)
+                VALUES (41, 'Usuario migrado', 'migrado@example.com', 'Dirección', 'OPERARIO', 'salt', 'hash')"""
+        )
+        legacyDatabase.execSQL("INSERT INTO usuario_granjas VALUES (41, 7)")
+        legacyDatabase.execSQL(
+            """INSERT INTO acciones
+                (id, alerta_id, medicion_id, descripcion, responsable, fecha_hora)
+                VALUES (51, 31, 21, 'Acción migrada', 'Usuario migrado', '2026-10-29T12:05:00')"""
         )
         legacyDatabase.version = 1
         legacyDatabase.close()
@@ -98,6 +139,18 @@ class CloroRoomMigrationInstrumentedTest {
             assertEquals("Punto migrado", point.nombre)
             assertEquals(1, roomDatabase.puntoDao().contarMediciones(point.id))
             assertEquals(1, roomDatabase.puntoDao().contarAlertas(point.id))
+            val actionCount = roomDatabase.openHelper.readableDatabase
+                .query("SELECT COUNT(*) FROM acciones")
+                .use { cursor -> cursor.moveToFirst(); cursor.getInt(0) }
+            val farmAssignmentCount = roomDatabase.openHelper.readableDatabase
+                .query("SELECT COUNT(*) FROM usuario_granjas")
+                .use { cursor -> cursor.moveToFirst(); cursor.getInt(0) }
+            val foreignKeyViolations = roomDatabase.openHelper.readableDatabase
+                .query("PRAGMA foreign_key_check")
+                .use { cursor -> cursor.moveToFirst() }
+            assertEquals(1, actionCount)
+            assertEquals(1, farmAssignmentCount)
+            assertFalse(foreignKeyViolations)
         } finally {
             roomDatabase.close()
             context.deleteDatabase(databaseName)
