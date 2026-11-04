@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -53,6 +54,7 @@ fun AppNavigation(
     mainViewModel: MainViewModel
 ) {
     val navController = rememberNavController()
+    val usuario by usuarioViewModel.uiState.collectAsStateWithLifecycle()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -217,7 +219,7 @@ fun AppNavigation(
                 }
                 composable(AppRoutes.Puntos.route) {
                     PuntosScreen(
-                        usuario = usuarioViewModel.uiState.value,
+                        usuario = usuario,
                         onIrAlHistorial = { puntoId ->
                             navController.navigate(
                                 AppRoutes.Detalle(puntoId.toString()).buildRoute()
@@ -230,12 +232,12 @@ fun AppNavigation(
                 }
                 composable(AppRoutes.GestionPuntos.route) {
                     GestionPuntosScreen(
-                        usuario = usuarioViewModel.uiState.value,
+                        usuario = usuario,
                         onVolver = { navController.popBackStack() }
                     )
                 }
                 composable(AppRoutes.Alertas.route) {
-                    AlertasScreen(usuario = usuarioViewModel.uiState.value)
+                    AlertasScreen(usuario = usuario)
                 }
                 composable(AppRoutes.Perfil.route) {
                     PerfilScreen(usuarioViewModel = usuarioViewModel)
@@ -248,7 +250,7 @@ fun AppNavigation(
                         ?: return@composable
                     HistorialScreen(
                         puntoId = puntoId,
-                        usuario = usuarioViewModel.uiState.value,
+                        usuario = usuario,
                         onVolver = { navController.popBackStack() }
                     )
                 }
