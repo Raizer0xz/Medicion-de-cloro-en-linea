@@ -7,12 +7,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -28,7 +29,9 @@ import androidx.compose.ui.unit.dp
 import com.example.medicindecloroenlnea.domain.model.EstadoCloro
 import com.example.medicindecloroenlnea.domain.model.Granja
 import com.example.medicindecloroenlnea.domain.model.PuntoMedicion
+import com.example.medicindecloroenlnea.domain.model.ValidacionFormulario
 import com.example.medicindecloroenlnea.domain.model.formatearNivel
+import com.example.medicindecloroenlnea.ui.components.CampoValidado
 
 // Devuelve el color del semáforo según el estado
 fun colorDeEstado(estado: EstadoCloro): Color = when (estado) {
@@ -89,19 +92,20 @@ fun PuntoItem(
             onDismissRequest = { mostrarFormulario = false },
             title = { Text("Medición · ${punto.codigo}") },
             text = {
-                OutlinedTextField(
+                CampoValidado(
                     value = valorIngresado,
                     onValueChange = { valorIngresado = it.replace(',', '.'); error = null },
-                    label = { Text("Cloro libre (mg/L)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    supportingText = { error?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+                    label = "Cloro libre (mg/L)",
+                    leadingIcon = Icons.Default.Edit,
+                    errorMessage = error,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
             },
             confirmButton = {
                 Button(onClick = {
-                    val value = valorIngresado.toDoubleOrNull()
-                    if (value == null || !value.isFinite() || value !in 0.0..20.0) {
-                        error = "Ingresa un valor entre 0 y 20 mg/L."
+                    val value = ValidacionFormulario.validarMedicion(valorIngresado)
+                    if (value == null) {
+                        error = ValidacionFormulario.MENSAJE_MEDICION_INVALIDA
                     } else {
                         onRegistrarMedicion(value)
                         mostrarFormulario = false

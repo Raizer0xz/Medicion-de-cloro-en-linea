@@ -7,12 +7,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -24,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,7 +36,9 @@ import com.example.medicindecloroenlnea.domain.model.DireccionDesviacion
 import com.example.medicindecloroenlnea.domain.model.EstadoCloro
 import com.example.medicindecloroenlnea.domain.model.RolUsuario
 import com.example.medicindecloroenlnea.domain.model.UsuarioUiState
+import com.example.medicindecloroenlnea.domain.model.ValidacionFormulario
 import com.example.medicindecloroenlnea.domain.model.formatearNivel
+import com.example.medicindecloroenlnea.ui.components.CampoValidado
 import com.example.medicindecloroenlnea.ui.viewmodels.AlertasViewModel
 
 @Composable
@@ -176,21 +181,37 @@ private fun AccionItem(accion: Accion) {
 @Composable
 private fun FormularioAccion(onDismiss: () -> Unit, onSave: (String) -> Unit) {
     var description by remember { mutableStateOf("") }
+    var attemptedSave by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Acción correctiva") },
         text = {
-            OutlinedTextField(
+            CampoValidado(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Descripción") },
-                supportingText = { Text("Se guardará con tu usuario y la fecha actual.") }
+                label = "Descripción",
+                leadingIcon = Icons.Default.Edit,
+                errorMessage = if (
+                    attemptedSave && !ValidacionFormulario.validarAccion(description)
+                ) {
+                    ValidacionFormulario.MENSAJE_ACCION_VACIA
+                } else {
+                    null
+                },
+                supportingMessage = "Se guardará con tu usuario y la fecha actual.",
+                singleLine = false,
+                maxLines = 4,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default)
             )
         },
         confirmButton = {
             Button(
-                onClick = { onSave(description) },
-                enabled = description.isNotBlank()
+                onClick = {
+                    attemptedSave = true
+                    if (ValidacionFormulario.validarAccion(description)) {
+                        onSave(description.trim())
+                    }
+                }
             ) {
                 Text("Guardar")
             }

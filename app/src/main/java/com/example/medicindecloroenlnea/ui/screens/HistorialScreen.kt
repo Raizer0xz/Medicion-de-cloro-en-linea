@@ -9,11 +9,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.medicindecloroenlnea.domain.model.ValidacionFormulario
+import com.example.medicindecloroenlnea.ui.components.CampoValidado
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medicindecloroenlnea.domain.model.DireccionDesviacion
@@ -129,19 +132,20 @@ private fun NuevaMedicionDialog(onDismiss: () -> Unit, onSave: (Double) -> Unit)
         onDismissRequest = onDismiss,
         title = { Text("Nueva medición") },
         text = {
-            OutlinedTextField(
+            CampoValidado(
                 value = rawValue,
                 onValueChange = { rawValue = it.replace(',', '.'); error = null },
-                label = { Text("Cloro libre (mg/L)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                supportingText = { error?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+                label = "Cloro libre (mg/L)",
+                leadingIcon = Icons.Default.Edit,
+                errorMessage = error,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
         },
         confirmButton = {
             Button(onClick = {
-                val value = rawValue.toDoubleOrNull()
-                if (value == null || !value.isFinite() || value !in 0.0..20.0) {
-                    error = "Ingresa un valor entre 0 y 20 mg/L."
+                val value = ValidacionFormulario.validarMedicion(rawValue)
+                if (value == null) {
+                    error = ValidacionFormulario.MENSAJE_MEDICION_INVALIDA
                 } else {
                     onSave(value)
                 }

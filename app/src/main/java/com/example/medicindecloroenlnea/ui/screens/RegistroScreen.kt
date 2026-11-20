@@ -13,10 +13,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,6 +38,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.medicindecloroenlnea.domain.model.RolUsuario
+import com.example.medicindecloroenlnea.ui.components.CampoValidado
 import com.example.medicindecloroenlnea.ui.viewmodels.UsuarioViewModel
 
 @Composable
@@ -65,51 +70,43 @@ fun RegistroScreen(
                 style = MaterialTheme.typography.bodyMedium
             )
 
-            OutlinedTextField(
+            CampoValidado(
                 value = usuario.nombre,
                 onValueChange = usuarioViewModel::actualizarNombre,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Nombre") },
-                singleLine = true,
-                isError = errores.nombre != null,
-                supportingText = { errores.nombre?.let { Text(it) } },
+                label = "Nombre",
+                leadingIcon = Icons.Default.Person,
+                errorMessage = errores.nombre,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
             )
-            OutlinedTextField(
+            CampoValidado(
                 value = usuario.correo,
                 onValueChange = usuarioViewModel::actualizarCorreo,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Correo electrónico") },
-                singleLine = true,
-                isError = errores.correo != null,
-                supportingText = { errores.correo?.let { Text(it) } },
+                label = "Correo electrónico",
+                leadingIcon = Icons.Default.Email,
+                errorMessage = errores.correo,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
                 )
             )
-            OutlinedTextField(
+            CampoValidado(
                 value = usuario.clave,
                 onValueChange = usuarioViewModel::actualizarClave,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Contraseña") },
-                singleLine = true,
-                isError = errores.clave != null,
-                supportingText = { errores.clave?.let { Text(it) } },
+                label = "Contraseña",
+                leadingIcon = Icons.Default.Lock,
+                errorMessage = errores.clave,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Next
                 )
             )
-            OutlinedTextField(
+            CampoValidado(
                 value = usuario.direccion,
                 onValueChange = usuarioViewModel::actualizarDireccion,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Dirección") },
-                singleLine = true,
-                isError = errores.direccion != null,
-                supportingText = { errores.direccion?.let { Text(it) } },
+                label = "Dirección",
+                leadingIcon = Icons.Default.LocationOn,
+                errorMessage = errores.direccion,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
             )
 
