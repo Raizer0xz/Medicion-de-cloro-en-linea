@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -39,6 +40,8 @@ fun InicioSesionScreen(
     var clave by rememberSaveable { mutableStateOf("") }
     var errorCorreo by rememberSaveable { mutableStateOf<String?>(null) }
     var errorClave by rememberSaveable { mutableStateOf<String?>(null) }
+    var errorOperacion by rememberSaveable { mutableStateOf<String?>(null) }
+    var iniciandoSesion by rememberSaveable { mutableStateOf(false) }
 
     Scaffold { innerPadding ->
         Column(
@@ -63,6 +66,7 @@ fun InicioSesionScreen(
                     correo = it
                     errorCorreo = null
                     errorClave = null
+                    errorOperacion = null
                 },
                 label = "Correo electrónico",
                 leadingIcon = Icons.Default.Email,
@@ -78,6 +82,7 @@ fun InicioSesionScreen(
                     clave = it
                     errorCorreo = null
                     errorClave = null
+                    errorOperacion = null
                 },
                 label = "Contraseña",
                 leadingIcon = Icons.Default.Lock,
@@ -90,22 +95,29 @@ fun InicioSesionScreen(
             )
             Button(
                 onClick = {
-                    errorCorreo = if (ValidacionFormulario.validarCorreo(correo)) {
+                    val correoValido = ValidacionFormulario.validarCorreo(correo)
+                    val claveValida = ValidacionFormulario.validarClave(clave)
+                    errorCorreo = if (correoValido) {
                         null
                     } else {
                         ValidacionFormulario.MENSAJE_CORREO_INVALIDO
                     }
-                    errorClave = if (ValidacionFormulario.validarClave(clave)) {
+                    errorClave = if (claveValida) {
                         null
                     } else {
                         ValidacionFormulario.MENSAJE_CLAVE_VACIA
                     }
-                    if (errorCorreo == null && errorClave == null) {
-                        usuarioViewModel.iniciarSesion(correo, clave) { autenticado ->
+                    if (correoValido && claveValida && !iniciandoSesion) {
+                        iniciandoSesion = true
+                        usuarioViewModel.iniciarSesion(correo, clave) { autenticado, error ->
+                            iniciandoSesion = false
                             if (autenticado) {
                                 errorCorreo = null
                                 errorClave = null
+                                errorOperacion = null
                                 onInicioExitoso()
+                            } else if (error != null) {
+                                errorOperacion = error
                             } else {
                                 val errorCredenciales =
                                     "Correo o contraseña incorrectos. Revisa ambos campos."
@@ -115,9 +127,17 @@ fun InicioSesionScreen(
                         }
                     }
                 },
+                enabled = !iniciandoSesion,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Iniciar sesión")
+                if (iniciandoSesion) {
+                    CircularProgressIndicator()
+                } else {
+                    Text("Iniciar sesión")
+                }
+            }
+            errorOperacion?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
             }
             TextButton(
                 onClick = onCrearCuenta,

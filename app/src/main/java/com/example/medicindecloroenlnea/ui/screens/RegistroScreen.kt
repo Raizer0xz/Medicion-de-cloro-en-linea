@@ -171,12 +171,12 @@ fun RegistroScreen(
             Button(
                 onClick = {
                     if (usuarioViewModel.validarFormulario()) {
-                        usuarioViewModel.registrarUsuario { registrado ->
+                        usuarioViewModel.registrarUsuario { registrado, error ->
                             if (registrado) {
                                 errorRegistro = null
                                 onRegistroExitoso()
                             } else {
-                                errorRegistro = "Ya existe una cuenta con ese correo."
+                                errorRegistro = error ?: "Ya existe una cuenta con ese correo."
                             }
                         }
                     }

@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -36,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.verticalScroll
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
@@ -235,45 +238,61 @@ private fun FormularioAccion(
         onDismissRequest = onDismiss,
         title = { Text("Acción correctiva") },
         text = {
-            CampoValidado(
-                value = description,
-                onValueChange = { description = it },
-                label = "Descripción",
-                leadingIcon = Icons.Default.Edit,
-                errorMessage = if (
-                    attemptedSave && !ValidacionFormulario.validarAccion(description)
-                ) {
-                    ValidacionFormulario.MENSAJE_ACCION_VACIA
-                } else {
-                    null
-                },
-                supportingMessage = "Se guardará con tu usuario y la fecha actual.",
-                singleLine = false,
-                maxLines = 4,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default)
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Evidencia fotográfica (opcional)", style = MaterialTheme.typography.labelMedium)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = { camera.launch(null) },
-                        enabled = !guardandoEvidencia
-                    ) { Text("Tomar foto") }
-                    OutlinedButton(
-                        onClick = { gallery.launch("image/*") },
-                        enabled = !guardandoEvidencia
-                    ) { Text("Elegir foto") }
-                }
-                fotoUri?.let { path ->
-                    AsyncImage(
-                        model = File(path),
-                        contentDescription = "Evidencia fotográfica seleccionada",
-                        modifier = Modifier.fillMaxWidth().height(120.dp),
-                        contentScale = ContentScale.Crop
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                CampoValidado(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = "Descripción",
+                    leadingIcon = Icons.Default.Edit,
+                    errorMessage = if (
+                        attemptedSave && !ValidacionFormulario.validarAccion(description)
+                    ) {
+                        ValidacionFormulario.MENSAJE_ACCION_VACIA
+                    } else {
+                        null
+                    },
+                    supportingMessage = "Se guardará con tu usuario y la fecha actual.",
+                    singleLine = false,
+                    maxLines = 4,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default)
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Evidencia fotográfica (opcional)",
+                        style = MaterialTheme.typography.labelMedium
                     )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { camera.launch(null) },
+                            enabled = !guardandoEvidencia,
+                            modifier = Modifier.weight(1f)
+                        ) { Text("Tomar foto", maxLines = 1) }
+                        OutlinedButton(
+                            onClick = { gallery.launch("image/*") },
+                            enabled = !guardandoEvidencia,
+                            modifier = Modifier.weight(1f)
+                        ) { Text("Elegir foto", maxLines = 1) }
+                    }
+                    fotoUri?.let { path ->
+                        AsyncImage(
+                            model = File(path),
+                            contentDescription = "Evidencia fotográfica seleccionada",
+                            modifier = Modifier.fillMaxWidth().height(120.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    if (guardandoEvidencia) Text("Guardando fotografía…")
+                    errorEvidencia?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 }
-                if (guardandoEvidencia) Text("Guardando fotografía…")
-                errorEvidencia?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         },
         confirmButton = {

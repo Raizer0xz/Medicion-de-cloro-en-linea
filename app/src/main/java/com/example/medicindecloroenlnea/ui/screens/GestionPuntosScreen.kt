@@ -62,7 +62,6 @@ fun GestionPuntosScreen(
             granjaSeleccionada = state.granjas.firstOrNull()?.id
         }
     }
-
     Scaffold { padding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),

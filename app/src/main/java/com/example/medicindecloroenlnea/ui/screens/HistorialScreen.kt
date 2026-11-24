@@ -54,7 +54,6 @@ fun HistorialScreen(
     LaunchedEffect(puntoId, usuario.id, usuario.granjasIds) {
         historialViewModel.configurar(puntoId, usuario.id, usuario.granjasIds)
     }
-
     Scaffold { innerPadding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),

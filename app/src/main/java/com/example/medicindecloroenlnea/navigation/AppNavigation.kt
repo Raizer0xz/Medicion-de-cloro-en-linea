@@ -1,9 +1,6 @@
 package com.example.medicindecloroenlnea.navigation
 
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -65,6 +62,21 @@ fun AppNavigation(
     val coroutineScope = rememberCoroutineScope()
     val sectionRoutes = listOf(AppRoutes.Puntos, AppRoutes.Alertas, AppRoutes.Perfil)
     val isAuthenticatedSection = sectionRoutes.any { it.route == currentRoute }
+    val isSecondaryScreen = currentRoute == AppRoutes.GestionPuntos.route ||
+        currentRoute == RUTA_DETALLE
+
+    BackHandler(enabled = isSecondaryScreen) {
+        coroutineScope.launch {
+            drawerState.close()
+            volverAPuntos(navController)
+        }
+    }
+
+    LaunchedEffect(currentRoute, drawerState) {
+        if (!isAuthenticatedSection && drawerState.isOpen) {
+            drawerState.close()
+        }
+    }
 
     LaunchedEffect(mainViewModel, navController) {
         mainViewModel.navigationEvents.collectLatest { event ->
@@ -108,8 +120,10 @@ fun AppNavigation(
                                 )
                             },
                             onClick = {
-                                navigateToSection(navController, route)
-                                coroutineScope.launch { drawerState.close() }
+                                coroutineScope.launch {
+                                    drawerState.close()
+                                    navigateToSection(navController, route)
+                                }
                             },
                             modifier = Modifier.padding(
                                 androidx.compose.material3.NavigationDrawerItemDefaults.ItemPadding
@@ -142,10 +156,10 @@ fun AppNavigation(
                         actions = {
                             TextButton(
                                 onClick = {
-                                    usuarioViewModel.cerrarSesion()
-                                    navController.navigate(AppRoutes.Login.route) {
-                                        popUpTo(AppRoutes.Puntos.route) { inclusive = true }
-                                        launchSingleTop = true
+                                    coroutineScope.launch {
+                                        drawerState.close()
+                                        usuarioViewModel.cerrarSesion()
+                                        navegarAlLogin(navController)
                                     }
                                 }
                             ) {
@@ -178,9 +192,7 @@ fun AppNavigation(
             NavHost(
                 navController = navController,
                 startDestination = AppRoutes.Login.route,
-                modifier = Modifier.padding(innerPadding),
-                enterTransition = { fadeIn() + slideInHorizontally { it / 4 } },
-                exitTransition = { fadeOut() + slideOutHorizontally { -it / 4 } }
+                modifier = Modifier.padding(innerPadding)
             ) {
                 composable(AppRoutes.Login.route) {
                     InicioSesionScreen(
@@ -239,7 +251,12 @@ fun AppNavigation(
                 composable(AppRoutes.GestionPuntos.route) {
                     GestionPuntosScreen(
                         usuario = usuario,
-                        onVolver = { navController.popBackStack() }
+                        onVolver = {
+                            coroutineScope.launch {
+                                drawerState.close()
+                                volverAPuntos(navController)
+                            }
+                        }
                     )
                 }
                 composable(AppRoutes.Alertas.route) {
@@ -257,11 +274,38 @@ fun AppNavigation(
                     HistorialScreen(
                         puntoId = puntoId,
                         usuario = usuario,
-                        onVolver = { navController.popBackStack() }
+                        onVolver = {
+                            coroutineScope.launch {
+                                drawerState.close()
+                                volverAPuntos(navController)
+                            }
+                        }
                     )
                 }
             }
         }
+    }
+}
+
+private fun volverAPuntos(navController: NavHostController) {
+    if (navController.popBackStack(AppRoutes.Puntos.route, inclusive = false)) {
+        return
+    }
+
+    navController.navigate(AppRoutes.Puntos.route) {
+        navController.currentDestination?.id?.let { currentDestinationId ->
+            popUpTo(currentDestinationId) { inclusive = true }
+        }
+        launchSingleTop = true
+        restoreState = false
+    }
+}
+
+private fun navegarAlLogin(navController: NavHostController) {
+    navController.navigate(AppRoutes.Login.route) {
+        popUpTo(AppRoutes.Puntos.route) { inclusive = true }
+        launchSingleTop = true
+        restoreState = false
     }
 }
 

@@ -1,6 +1,7 @@
 package com.example.medicindecloroenlnea.ui.viewmodels
 
 import android.app.Application
+import android.database.sqlite.SQLiteException
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medicindecloroenlnea.data.repository.LocalCloroRepository
@@ -50,35 +51,49 @@ class UsuarioViewModel(application: Application) : AndroidViewModel(application)
         return !errors.tieneErrores()
     }
 
-    fun registrarUsuario(onCompleted: (Boolean) -> Unit) {
+    fun registrarUsuario(onCompleted: (Boolean, String?) -> Unit) {
         if (!validarFormulario()) {
-            onCompleted(false)
+            onCompleted(false, null)
             return
         }
         val user = _uiState.value
         viewModelScope.launch {
-            val savedUser = withContext(Dispatchers.IO) {
-                repository.registrarUsuario(
-                    user.nombre,
-                    user.correo,
-                    user.direccion,
-                    user.clave,
-                    user.rol,
-                    user.granjasIds
-                )
+            val result = try {
+                withContext(Dispatchers.IO) {
+                    repository.registrarUsuario(
+                        user.nombre,
+                        user.correo,
+                        user.direccion,
+                        user.clave,
+                        user.rol,
+                        user.granjasIds
+                    )
+                } to null
+            } catch (error: SQLiteException) {
+                null to "No se pudo guardar la cuenta por un error de base de datos."
+            } catch (error: IllegalStateException) {
+                null to (error.localizedMessage ?: "No se pudo guardar la cuenta.")
             }
-            if (savedUser != null) cargarPerfil(savedUser)
-            onCompleted(savedUser != null)
+            if (result.first != null) cargarPerfil(requireNotNull(result.first))
+            onCompleted(result.first != null, result.second)
         }
     }
 
-    fun iniciarSesion(correo: String, clave: String, onCompleted: (Boolean) -> Unit) {
+    fun iniciarSesion(
+        correo: String,
+        clave: String,
+        onCompleted: (Boolean, String?) -> Unit
+    ) {
         viewModelScope.launch {
-            val user = withContext(Dispatchers.IO) {
-                repository.autenticar(correo, clave)
+            val result = try {
+                withContext(Dispatchers.IO) { repository.autenticar(correo, clave) } to null
+            } catch (error: SQLiteException) {
+                null to "No se pudo consultar la cuenta por un error de base de datos."
+            } catch (error: IllegalStateException) {
+                null to (error.localizedMessage ?: "No se pudo consultar la cuenta.")
             }
-            if (user != null) cargarPerfil(user)
-            onCompleted(user != null)
+            if (result.first != null) cargarPerfil(requireNotNull(result.first))
+            onCompleted(result.first != null, result.second)
         }
     }
 

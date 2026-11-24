@@ -1,6 +1,7 @@
 package com.example.medicindecloroenlnea.ui.viewmodels
 
 import android.app.Application
+import android.database.sqlite.SQLiteException
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medicindecloroenlnea.data.repository.GestionPuntosRepository
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -56,6 +58,14 @@ class GestionPuntosViewModel(application: Application) : AndroidViewModel(applic
                 _uiState.update {
                     it.copy(granjas = farms, puntos = points, cargando = false)
                 }
+            }.catch { error ->
+                _uiState.update {
+                    it.copy(
+                        cargando = false,
+                        error = "No se pudieron cargar los puntos: " +
+                            (error.localizedMessage ?: "error de base de datos.")
+                    )
+                }
             }.collect {}
         }
     }
@@ -80,29 +90,31 @@ class GestionPuntosViewModel(application: Application) : AndroidViewModel(applic
         }
 
         viewModelScope.launch {
-            val result = if (puntoId == null) {
-                repository.crearPunto(
-                    usuario.id,
-                    usuario.rol,
-                    usuario.granjasIds,
-                    granjaId,
-                    nombre,
-                    codigo,
-                    galpon,
-                    tipo,
-                    requireNotNull(nivelInicial)
-                )
-            } else {
-                repository.actualizarPunto(
-                    usuario.id,
-                    usuario.rol,
-                    usuario.granjasIds,
-                    puntoId,
-                    nombre,
-                    codigo,
-                    galpon,
-                    tipo
-                )
+            val result = ejecutarOperacion {
+                if (puntoId == null) {
+                    repository.crearPunto(
+                        usuario.id,
+                        usuario.rol,
+                        usuario.granjasIds,
+                        granjaId,
+                        nombre,
+                        codigo,
+                        galpon,
+                        tipo,
+                        requireNotNull(nivelInicial)
+                    )
+                } else {
+                    repository.actualizarPunto(
+                        usuario.id,
+                        usuario.rol,
+                        usuario.granjasIds,
+                        puntoId,
+                        nombre,
+                        codigo,
+                        galpon,
+                        tipo
+                    )
+                }
             }
             _uiState.update {
                 it.copy(
@@ -116,12 +128,14 @@ class GestionPuntosViewModel(application: Application) : AndroidViewModel(applic
 
     fun eliminar(puntoId: Int) {
         viewModelScope.launch {
-            val result = repository.eliminarPunto(
-                usuario.id,
-                usuario.rol,
-                usuario.granjasIds,
-                puntoId
-            )
+            val result = ejecutarOperacion {
+                repository.eliminarPunto(
+                    usuario.id,
+                    usuario.rol,
+                    usuario.granjasIds,
+                    puntoId
+                )
+            }
             _uiState.update {
                 it.copy(
                     mensaje = result.mensaje.takeIf { result.exitoso },
@@ -129,6 +143,22 @@ class GestionPuntosViewModel(application: Application) : AndroidViewModel(applic
                 )
             }
         }
+    }
+
+    private suspend fun ejecutarOperacion(
+        operation: suspend () -> com.example.medicindecloroenlnea.data.repository.ResultadoGestionPuntos
+    ) = try {
+        operation()
+    } catch (error: SQLiteException) {
+        com.example.medicindecloroenlnea.data.repository.ResultadoGestionPuntos(
+            exitoso = false,
+            mensaje = "Error de base de datos: ${error.localizedMessage ?: "operación no completada."}"
+        )
+    } catch (error: IllegalStateException) {
+        com.example.medicindecloroenlnea.data.repository.ResultadoGestionPuntos(
+            exitoso = false,
+            mensaje = error.localizedMessage ?: "No se pudo completar la operación."
+        )
     }
 
     fun limpiarMensajes() {
