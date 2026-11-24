@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medicindecloroenlnea.data.repository.LocalCloroRepository
 import com.example.medicindecloroenlnea.domain.model.Medicion
+import com.example.medicindecloroenlnea.domain.model.EstadoCloro
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,12 +45,26 @@ class HistorialViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun registrarMedicion(puntoId: Int, nivel: Double, onCompleted: (Boolean) -> Unit) {
+    fun registrarMedicion(
+        puntoId: Int,
+        nivel: Double,
+        onCompleted: (Boolean, EstadoCloro?) -> Unit
+    ) {
         viewModelScope.launch {
-            val saved = withContext(Dispatchers.IO) {
-                repository.registrarMedicion(puntoId, nivel, usuarioId, granjasPermitidas)
+            val result = withContext(Dispatchers.IO) {
+                val saved = repository.registrarMedicion(
+                    puntoId,
+                    nivel,
+                    usuarioId,
+                    granjasPermitidas
+                )
+                saved to if (saved) {
+                    repository.estadoMedicion(puntoId, nivel, granjasPermitidas)
+                } else {
+                    null
+                }
             }
-            onCompleted(saved)
+            onCompleted(result.first, result.second)
         }
     }
 }

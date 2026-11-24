@@ -1,5 +1,6 @@
 package com.example.medicindecloroenlnea.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -26,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -34,6 +36,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.medicindecloroenlnea.ui.screens.HistorialScreen
+import com.example.medicindecloroenlnea.ui.screens.GestionPuntosScreen
 import com.example.medicindecloroenlnea.ui.screens.AlertasScreen
 import com.example.medicindecloroenlnea.ui.screens.InicioSesionScreen
 import com.example.medicindecloroenlnea.ui.screens.PerfilScreen
@@ -52,12 +55,28 @@ fun AppNavigation(
     mainViewModel: MainViewModel
 ) {
     val navController = rememberNavController()
+    val usuario by usuarioViewModel.uiState.collectAsStateWithLifecycle()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
     val sectionRoutes = listOf(AppRoutes.Puntos, AppRoutes.Alertas, AppRoutes.Perfil)
     val isAuthenticatedSection = sectionRoutes.any { it.route == currentRoute }
+    val isSecondaryScreen = currentRoute == AppRoutes.GestionPuntos.route ||
+        currentRoute == RUTA_DETALLE
+
+    BackHandler(enabled = isSecondaryScreen) {
+        coroutineScope.launch {
+            drawerState.close()
+            volverAPuntos(navController)
+        }
+    }
+
+    LaunchedEffect(currentRoute, drawerState) {
+        if (!isAuthenticatedSection && drawerState.isOpen) {
+            drawerState.close()
+        }
+    }
 
     LaunchedEffect(mainViewModel, navController) {
         mainViewModel.navigationEvents.collectLatest { event ->
@@ -101,8 +120,10 @@ fun AppNavigation(
                                 )
                             },
                             onClick = {
-                                navigateToSection(navController, route)
-                                coroutineScope.launch { drawerState.close() }
+                                coroutineScope.launch {
+                                    drawerState.close()
+                                    navigateToSection(navController, route)
+                                }
                             },
                             modifier = Modifier.padding(
                                 androidx.compose.material3.NavigationDrawerItemDefaults.ItemPadding
@@ -135,10 +156,10 @@ fun AppNavigation(
                         actions = {
                             TextButton(
                                 onClick = {
-                                    usuarioViewModel.cerrarSesion()
-                                    navController.navigate(AppRoutes.Login.route) {
-                                        popUpTo(AppRoutes.Puntos.route) { inclusive = true }
-                                        launchSingleTop = true
+                                    coroutineScope.launch {
+                                        drawerState.close()
+                                        usuarioViewModel.cerrarSesion()
+                                        navegarAlLogin(navController)
                                     }
                                 }
                             ) {
@@ -216,16 +237,30 @@ fun AppNavigation(
                 }
                 composable(AppRoutes.Puntos.route) {
                     PuntosScreen(
-                        usuario = usuarioViewModel.uiState.value,
+                        usuario = usuario,
                         onIrAlHistorial = { puntoId ->
                             navController.navigate(
                                 AppRoutes.Detalle(puntoId.toString()).buildRoute()
                             )
+                        },
+                        onGestionarPuntos = {
+                            navController.navigate(AppRoutes.GestionPuntos.route)
+                        }
+                    )
+                }
+                composable(AppRoutes.GestionPuntos.route) {
+                    GestionPuntosScreen(
+                        usuario = usuario,
+                        onVolver = {
+                            coroutineScope.launch {
+                                drawerState.close()
+                                volverAPuntos(navController)
+                            }
                         }
                     )
                 }
                 composable(AppRoutes.Alertas.route) {
-                    AlertasScreen(usuario = usuarioViewModel.uiState.value)
+                    AlertasScreen(usuario = usuario)
                 }
                 composable(AppRoutes.Perfil.route) {
                     PerfilScreen(usuarioViewModel = usuarioViewModel)
@@ -238,12 +273,39 @@ fun AppNavigation(
                         ?: return@composable
                     HistorialScreen(
                         puntoId = puntoId,
-                        usuario = usuarioViewModel.uiState.value,
-                        onVolver = { navController.popBackStack() }
+                        usuario = usuario,
+                        onVolver = {
+                            coroutineScope.launch {
+                                drawerState.close()
+                                volverAPuntos(navController)
+                            }
+                        }
                     )
                 }
             }
         }
+    }
+}
+
+private fun volverAPuntos(navController: NavHostController) {
+    if (navController.popBackStack(AppRoutes.Puntos.route, inclusive = false)) {
+        return
+    }
+
+    navController.navigate(AppRoutes.Puntos.route) {
+        navController.currentDestination?.id?.let { currentDestinationId ->
+            popUpTo(currentDestinationId) { inclusive = true }
+        }
+        launchSingleTop = true
+        restoreState = false
+    }
+}
+
+private fun navegarAlLogin(navController: NavHostController) {
+    navController.navigate(AppRoutes.Login.route) {
+        popUpTo(AppRoutes.Puntos.route) { inclusive = true }
+        launchSingleTop = true
+        restoreState = false
     }
 }
 

@@ -2,13 +2,11 @@ package com.example.medicindecloroenlnea.domain.model
 
 object ValidacionUsuario {
     private const val LONGITUD_MINIMA_CLAVE = 8
-    private val correoValido =
-        Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
 
     fun validar(usuario: UsuarioUiState): UsuarioErrores = UsuarioErrores(
         nombre = if (usuario.nombre.isBlank()) "Ingresa tu nombre." else null,
-        correo = if (!correoValido.matches(usuario.correo.trim())) {
-            "Ingresa un correo electrónico válido."
+        correo = if (!ValidacionFormulario.validarCorreo(usuario.correo)) {
+            ValidacionFormulario.MENSAJE_CORREO_INVALIDO
         } else {
             null
         },

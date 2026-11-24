@@ -1,9 +1,12 @@
 package com.example.medicindecloroenlnea.ui.viewmodels
 
 import android.app.Application
+import android.graphics.Bitmap
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medicindecloroenlnea.data.local.AlertaLocal
+import com.example.medicindecloroenlnea.data.local.EvidenciaAccionLocal
 import com.example.medicindecloroenlnea.data.repository.LocalCloroRepository
 import com.example.medicindecloroenlnea.domain.model.Accion
 import com.example.medicindecloroenlnea.domain.model.RolUsuario
@@ -16,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.IOException
 
 data class AlertasUiState(
     val alertas: List<AlertaLocal> = emptyList(),
@@ -66,13 +70,42 @@ class AlertasViewModel(application: Application) : AndroidViewModel(application)
 
     fun obtenerAcciones(alertaId: Long): Flow<List<Accion>> = repository.obtenerAcciones(alertaId)
 
-    fun registrarAccion(alertaId: Long, descripcion: String, onCompleted: (Boolean) -> Unit) {
+    fun guardarEvidencia(
+        uri: Uri? = null,
+        bitmap: Bitmap? = null,
+        onCompleted: (String?, String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val path = withContext(Dispatchers.IO) {
+                    when {
+                        uri != null -> EvidenciaAccionLocal.guardar(getApplication(), uri)
+                        bitmap != null -> EvidenciaAccionLocal.guardar(getApplication(), bitmap)
+                        else -> null
+                    }
+                }
+                onCompleted(path, null)
+            } catch (error: IOException) {
+                onCompleted(null, error.message ?: "No se pudo guardar la fotografía.")
+            } catch (error: SecurityException) {
+                onCompleted(null, "No hay permiso para leer la imagen seleccionada.")
+            }
+        }
+    }
+
+    fun registrarAccion(
+        alertaId: Long,
+        descripcion: String,
+        fotoUri: String?,
+        onCompleted: (Boolean) -> Unit
+    ) {
         val id = usuarioId ?: return onCompleted(false)
         viewModelScope.launch {
             val saved = withContext(Dispatchers.IO) {
                 repository.registrarAccion(
                     alertaId,
                     descripcion,
+                    fotoUri,
                     nombreUsuario,
                     id,
                     granjasPermitidas

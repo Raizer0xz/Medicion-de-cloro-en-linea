@@ -7,9 +7,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -23,6 +26,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.medicindecloroenlnea.ui.components.CampoValidado
+import com.example.medicindecloroenlnea.domain.model.ValidacionFormulario
 import com.example.medicindecloroenlnea.ui.viewmodels.UsuarioViewModel
 
 @Composable
@@ -33,7 +38,10 @@ fun InicioSesionScreen(
 ) {
     var correo by rememberSaveable { mutableStateOf("") }
     var clave by rememberSaveable { mutableStateOf("") }
-    var error by rememberSaveable { mutableStateOf<String?>(null) }
+    var errorCorreo by rememberSaveable { mutableStateOf<String?>(null) }
+    var errorClave by rememberSaveable { mutableStateOf<String?>(null) }
+    var errorOperacion by rememberSaveable { mutableStateOf<String?>(null) }
+    var iniciandoSesion by rememberSaveable { mutableStateOf(false) }
 
     Scaffold { innerPadding ->
         Column(
@@ -52,56 +60,84 @@ fun InicioSesionScreen(
                 text = "Inicia sesión con una cuenta registrada en este dispositivo.",
                 style = MaterialTheme.typography.bodyMedium
             )
-            OutlinedTextField(
+            CampoValidado(
                 value = correo,
                 onValueChange = {
                     correo = it
-                    error = null
+                    errorCorreo = null
+                    errorClave = null
+                    errorOperacion = null
                 },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Correo electrónico") },
-                singleLine = true,
+                label = "Correo electrónico",
+                leadingIcon = Icons.Default.Email,
+                errorMessage = errorCorreo,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
                 )
             )
-            OutlinedTextField(
+            CampoValidado(
                 value = clave,
                 onValueChange = {
                     clave = it
-                    error = null
+                    errorCorreo = null
+                    errorClave = null
+                    errorOperacion = null
                 },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Contraseña") },
-                singleLine = true,
+                label = "Contraseña",
+                leadingIcon = Icons.Default.Lock,
+                errorMessage = errorClave,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
                 )
             )
-            error?.let {
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
             Button(
                 onClick = {
-                    usuarioViewModel.iniciarSesion(correo, clave) { autenticado ->
-                        if (autenticado) {
-                            error = null
-                            onInicioExitoso()
-                        } else {
-                            error = "Correo o contraseña incorrectos. Crea una cuenta si aún no tienes una."
+                    val correoValido = ValidacionFormulario.validarCorreo(correo)
+                    val claveValida = ValidacionFormulario.validarClave(clave)
+                    errorCorreo = if (correoValido) {
+                        null
+                    } else {
+                        ValidacionFormulario.MENSAJE_CORREO_INVALIDO
+                    }
+                    errorClave = if (claveValida) {
+                        null
+                    } else {
+                        ValidacionFormulario.MENSAJE_CLAVE_VACIA
+                    }
+                    if (correoValido && claveValida && !iniciandoSesion) {
+                        iniciandoSesion = true
+                        usuarioViewModel.iniciarSesion(correo, clave) { autenticado, error ->
+                            iniciandoSesion = false
+                            if (autenticado) {
+                                errorCorreo = null
+                                errorClave = null
+                                errorOperacion = null
+                                onInicioExitoso()
+                            } else if (error != null) {
+                                errorOperacion = error
+                            } else {
+                                val errorCredenciales =
+                                    "Correo o contraseña incorrectos. Revisa ambos campos."
+                                errorCorreo = errorCredenciales
+                                errorClave = errorCredenciales
+                            }
                         }
                     }
                 },
+                enabled = !iniciandoSesion,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Iniciar sesión")
+                if (iniciandoSesion) {
+                    CircularProgressIndicator()
+                } else {
+                    Text("Iniciar sesión")
+                }
+            }
+            errorOperacion?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
             }
             TextButton(
                 onClick = onCrearCuenta,

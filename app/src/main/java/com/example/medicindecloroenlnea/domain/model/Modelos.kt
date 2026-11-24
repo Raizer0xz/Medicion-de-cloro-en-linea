@@ -71,7 +71,8 @@ data class Accion(
     val fechaHora: String,
     val alertaId: Int = 0,
     val estado: String = "ABIERTA",
-    val medicionId: Int? = null
+    val medicionId: Int? = null,
+    val fotoUri: String? = null
 )
 
 fun calcularEstado(nivel: Double, rango: RangoCloro = RangoCloro()): EstadoCloro =

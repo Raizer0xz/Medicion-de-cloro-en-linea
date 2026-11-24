@@ -5,18 +5,14 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import android.util.Base64
 import com.example.medicindecloroenlnea.domain.model.DireccionDesviacion
 import com.example.medicindecloroenlnea.domain.model.EstadoCloro
 import com.example.medicindecloroenlnea.domain.model.RangoCloro
 import com.example.medicindecloroenlnea.domain.model.RolUsuario
 import com.example.medicindecloroenlnea.domain.model.calcularDireccion
 import com.example.medicindecloroenlnea.domain.model.calcularEstado
-import java.security.SecureRandom
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import javax.crypto.SecretKeyFactory
-import javax.crypto.spec.PBEKeySpec
 import kotlinx.coroutines.flow.MutableSharedFlow
 
 data class UsuarioAutenticado(
@@ -61,7 +57,8 @@ data class AccionLocal(
     val descripcion: String,
     val responsable: String,
     val fechaHora: String,
-    val estado: String
+    val estado: String,
+    val fotoUri: String?
 )
 
 class CloroLocalDatabase private constructor(context: Context) :
@@ -74,90 +71,27 @@ class CloroLocalDatabase private constructor(context: Context) :
     }
 
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL(
-            """CREATE TABLE granjas (
-                id INTEGER PRIMARY KEY,
-                nombre TEXT NOT NULL
-            )"""
-        )
-        db.execSQL(
-            """CREATE TABLE puntos (
-                id INTEGER PRIMARY KEY,
-                granja_id INTEGER NOT NULL REFERENCES granjas(id),
-                nombre TEXT NOT NULL,
-                codigo TEXT NOT NULL,
-                galpon TEXT NOT NULL,
-                tipo TEXT NOT NULL,
-                nivel REAL NOT NULL,
-                actualizado TEXT NOT NULL,
-                critico_bajo REAL NOT NULL DEFAULT 2,
-                normal_bajo REAL NOT NULL DEFAULT 3,
-                normal_alto REAL NOT NULL DEFAULT 5,
-                critico_alto REAL NOT NULL DEFAULT 6
-            )"""
-        )
-        db.execSQL(
-            """CREATE TABLE mediciones (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                punto_id INTEGER NOT NULL REFERENCES puntos(id),
-                nivel REAL NOT NULL,
-                fecha_hora TEXT NOT NULL,
-                estado TEXT NOT NULL,
-                direccion TEXT,
-                sincronizada INTEGER NOT NULL DEFAULT 0,
-                usuario_id INTEGER
-            )"""
-        )
-        db.execSQL(
-            """CREATE TABLE alertas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                punto_id INTEGER NOT NULL REFERENCES puntos(id),
-                medicion_id INTEGER NOT NULL REFERENCES mediciones(id),
-                nivel REAL NOT NULL,
-                fecha_hora TEXT NOT NULL,
-                estado TEXT NOT NULL,
-                direccion TEXT NOT NULL,
-                atendida INTEGER NOT NULL DEFAULT 0,
-                cerrada_por TEXT,
-                medicion_verificada_id INTEGER REFERENCES mediciones(id)
-            )"""
-        )
-        db.execSQL(
-            """CREATE TABLE acciones (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                alerta_id INTEGER NOT NULL REFERENCES alertas(id),
-                medicion_id INTEGER NOT NULL REFERENCES mediciones(id),
-                descripcion TEXT NOT NULL,
-                responsable TEXT NOT NULL,
-                fecha_hora TEXT NOT NULL,
-                estado TEXT NOT NULL DEFAULT 'ABIERTA'
-            )"""
-        )
-        db.execSQL(
-            """CREATE TABLE usuarios (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nombre TEXT NOT NULL,
-                correo TEXT NOT NULL UNIQUE COLLATE NOCASE,
-                direccion TEXT NOT NULL,
-                rol TEXT NOT NULL,
-                sal TEXT NOT NULL,
-                clave_hash TEXT NOT NULL
-            )"""
-        )
-        db.execSQL(
-            """CREATE TABLE usuario_granjas (
-                usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-                granja_id INTEGER NOT NULL REFERENCES granjas(id),
-                PRIMARY KEY(usuario_id, granja_id)
-            )"""
-        )
-        db.execSQL("CREATE INDEX idx_mediciones_punto_fecha ON mediciones(punto_id, fecha_hora DESC)")
-        db.execSQL("CREATE INDEX idx_alertas_estado_fecha ON alertas(atendida, fecha_hora DESC)")
-        sembrarDatos(db)
+        CloroLocalSchema.create(db)
+        CloroLocalSeedData.populate(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        throw IllegalStateException("Falta definir la migración de la base local $oldVersion -> $newVersion.")
+        var version = oldVersion
+        if (version == 1 && newVersion >= 2) {
+            CloroSchemaMigration.upgradeFromVersionOne { db.execSQL(it) }
+            version = 2
+        }
+        if (version == 2 && newVersion >= 3) {
+            CloroSchemaMigration.upgradeFromVersionTwo { db.execSQL(it) }
+            version = 3
+        }
+        if (version != newVersion) {
+            throw IllegalStateException("Falta definir la migración de la base local $oldVersion -> $newVersion.")
+        }
+    }
+
+    fun notificarCambios() {
+        cambios.tryEmit(Unit)
     }
 
     fun obtenerGranjas(ids: List<Int>?): List<Pair<Int, String>> {
@@ -293,7 +227,10 @@ class CloroLocalDatabase private constructor(context: Context) :
     fun obtenerAcciones(alertaId: Long): List<AccionLocal> {
         val cursor = readableDatabase.query(
             "acciones",
-            arrayOf("id", "alerta_id", "medicion_id", "descripcion", "responsable", "fecha_hora", "estado"),
+            arrayOf(
+                "id", "alerta_id", "medicion_id", "descripcion", "responsable", "fecha_hora",
+                "estado", "foto_uri"
+            ),
             "alerta_id = ?",
             arrayOf(alertaId.toString()),
             null,
@@ -318,7 +255,8 @@ class CloroLocalDatabase private constructor(context: Context) :
                             result.getString(3),
                             result.getString(4),
                             result.getString(5),
-                            result.getString(6)
+                            result.getString(6),
+                            result.getString(7)
                         )
                     )
                 }
@@ -335,14 +273,14 @@ class CloroLocalDatabase private constructor(context: Context) :
         granjasIds: List<Int>
     ): UsuarioAutenticado? {
         if (granjasIds.isEmpty()) return null
-        val salt = ByteArray(SALT_BYTES).also(SecureRandom()::nextBytes)
+        val salt = PasswordHasher.crearSal()
         val values = ContentValues().apply {
             put("nombre", nombre.trim())
             put("correo", correo.trim())
             put("direccion", direccion.trim())
             put("rol", rol.name)
-            put("sal", Base64.encodeToString(salt, Base64.NO_WRAP))
-            put("clave_hash", hashPassword(clave, salt))
+            put("sal", android.util.Base64.encodeToString(salt, android.util.Base64.NO_WRAP))
+            put("clave_hash", PasswordHasher.hash(clave, salt))
         }
         val db = writableDatabase
         db.beginTransaction()
@@ -382,9 +320,12 @@ class CloroLocalDatabase private constructor(context: Context) :
         )
         val user = cursor.use { result ->
             if (!result.moveToFirst()) return null
-            val salt = Base64.decode(result.getString(5), Base64.NO_WRAP)
+            val salt = android.util.Base64.decode(
+                result.getString(5),
+                android.util.Base64.NO_WRAP
+            )
             val expectedHash = result.getString(6)
-            if (!constantTimeEquals(expectedHash, hashPassword(clave, salt))) return null
+            if (!PasswordHasher.coincide(expectedHash, PasswordHasher.hash(clave, salt))) return null
             UsuarioAutenticado(
                 id = result.getLong(0),
                 nombre = result.getString(1),
@@ -501,9 +442,35 @@ class CloroLocalDatabase private constructor(context: Context) :
         return true
     }
 
+    fun estadoMedicion(
+        puntoId: Int,
+        nivel: Double,
+        granjasPermitidas: List<Int>
+    ): EstadoCloro? {
+        val cursor = readableDatabase.query(
+            "puntos",
+            arrayOf("granja_id", "critico_bajo", "normal_bajo", "normal_alto", "critico_alto"),
+            "id = ?",
+            arrayOf(puntoId.toString()),
+            null,
+            null,
+            null
+        )
+        return cursor.use { result ->
+            if (!result.moveToFirst() || result.getInt(0) !in granjasPermitidas) return null
+            RangoCloro(
+                result.getDouble(1),
+                result.getDouble(2),
+                result.getDouble(3),
+                result.getDouble(4)
+            ).estado(nivel)
+        }
+    }
+
     fun registrarAccion(
         alertaId: Long,
         descripcion: String,
+        fotoUri: String?,
         responsable: String,
         usuarioId: Long,
         granjasPermitidas: List<Int>
@@ -529,6 +496,7 @@ class CloroLocalDatabase private constructor(context: Context) :
                     put("descripcion", descripcion.trim())
                     put("responsable", responsable.trim())
                     put("fecha_hora", now())
+                    if (fotoUri == null) putNull("foto_uri") else put("foto_uri", fotoUri)
                 }
             )
             if (result != -1L) db.setTransactionSuccessful()
@@ -628,98 +596,6 @@ class CloroLocalDatabase private constructor(context: Context) :
         }
     }
 
-    private fun sembrarDatos(db: SQLiteDatabase) {
-        listOf("Granja Los Aromos", "Granja El Roble", "Granja Santa Rosa").forEachIndexed { index, name ->
-            db.insertOrThrow(
-                "granjas",
-                null,
-                ContentValues().apply {
-                    put("id", index + 1)
-                    put("nombre", name)
-                }
-            )
-        }
-        val seed = listOf(
-            Triple(1, "Galpón 1 - Bebederos", 4.12), Triple(1, "Galpón 2 - Bebederos", 2.71),
-            Triple(1, "Estanque principal", 6.24), Triple(1, "Sala de proceso", 3.86),
-            Triple(2, "Galpón 1 - Bebederos", 4.83), Triple(2, "Galpón 2 - Bebederos", 5.54),
-            Triple(2, "Estanque principal", 1.76), Triple(2, "Sala de proceso", 3.28),
-            Triple(3, "Galpón 1 - Bebederos", 5.23), Triple(3, "Galpón 2 - Bebederos", 2.84),
-            Triple(3, "Estanque principal", 6.11), Triple(3, "Sala de proceso", 4.37)
-        )
-        val start = LocalDateTime.now().minusMinutes(20)
-        seed.forEachIndexed { index, (farmId, name, current) ->
-            val pointId = index + 1
-            db.insertOrThrow(
-                "puntos",
-                null,
-                ContentValues().apply {
-                    put("id", pointId)
-                    put("granja_id", farmId)
-                    put("nombre", name)
-                    put("codigo", "P-%02d".format(pointId))
-                    put("galpon", name.substringBefore(" - "))
-                    put("tipo", if (name.contains("Estanque")) "Estanque" else "Bebedero")
-                    put("nivel", current)
-                    put("actualizado", start.plusMinutes(20).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
-                }
-            )
-            listOf(-0.18, 0.09, -0.07, 0.14, 0.0).forEachIndexed { sample, delta ->
-                val timestamp = start.plusMinutes(sample * 5L).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-                val value = (current + delta).coerceAtLeast(0.0)
-                val state = calcularEstado(value)
-                val measurementId = db.insertOrThrow(
-                    "mediciones",
-                    null,
-                    ContentValues().apply {
-                        put("punto_id", pointId)
-                        put("nivel", value)
-                        put("fecha_hora", timestamp)
-                        put("estado", state.name)
-                        put("direccion", calcularDireccion(value)?.name)
-                        put("sincronizada", 1)
-                    }
-                )
-                if (sample == 4 && state != EstadoCloro.NORMAL) {
-                    db.insertOrThrow(
-                        "alertas",
-                        null,
-                        ContentValues().apply {
-                            put("punto_id", pointId)
-                            put("medicion_id", measurementId)
-                            put("nivel", value)
-                            put("fecha_hora", timestamp)
-                            put("estado", state.name)
-                            put("direccion", calcularDireccion(value)!!.name)
-                        }
-                    )
-                }
-            }
-        }
-    }
-
-    private fun hashPassword(password: String, salt: ByteArray): String {
-        val spec = PBEKeySpec(password.toCharArray(), salt, PBKDF2_ITERATIONS, HASH_BITS)
-        return try {
-            Base64.encodeToString(
-                SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded,
-                Base64.NO_WRAP
-            )
-        } finally {
-            spec.clearPassword()
-        }
-    }
-
-    private fun constantTimeEquals(first: String, second: String): Boolean {
-        val a = first.toByteArray(Charsets.UTF_8)
-        val b = second.toByteArray(Charsets.UTF_8)
-        var result = a.size xor b.size
-        for (index in 0 until maxOf(a.size, b.size)) {
-            result = result or ((a.getOrElse(index) { 0 }.toInt()) xor (b.getOrElse(index) { 0 }.toInt()))
-        }
-        return result == 0
-    }
-
     private fun now(): String = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
     private fun alertaPerteneceAGranja(
@@ -742,11 +618,8 @@ class CloroLocalDatabase private constructor(context: Context) :
 
     companion object {
         const val DATABASE_NAME = "medicion_cloro.db"
-        const val DATABASE_VERSION = 1
+        const val DATABASE_VERSION = 3
         const val MAX_NIVEL = 20.0
-        const val SALT_BYTES = 16
-        const val PBKDF2_ITERATIONS = 120_000
-        const val HASH_BITS = 256
         @Volatile
         private var instance: CloroLocalDatabase? = null
 

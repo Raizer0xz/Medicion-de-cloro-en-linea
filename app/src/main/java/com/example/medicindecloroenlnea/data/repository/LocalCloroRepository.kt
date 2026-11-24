@@ -109,15 +109,23 @@ class LocalCloroRepository(context: Context) : CloroRepository {
         return database.registrarMedicion(puntoId, nivel, usuarioId)
     }
 
+    fun estadoMedicion(
+        puntoId: Int,
+        nivel: Double,
+        granjasPermitidas: List<Int>
+    ) = database.estadoMedicion(puntoId, nivel, granjasPermitidas)
+
     fun registrarAccion(
         alertaId: Long,
         descripcion: String,
+        fotoUri: String?,
         responsable: String,
         usuarioId: Long,
         granjasPermitidas: List<Int>
     ): Boolean = database.registrarAccion(
         alertaId,
         descripcion,
+        fotoUri,
         responsable,
         usuarioId,
         granjasPermitidas
@@ -161,6 +169,7 @@ class LocalCloroRepository(context: Context) : CloroRepository {
         fechaHora = fechaHora,
         alertaId = alertaId.toInt(),
         estado = estado,
-        medicionId = medicionId.toInt()
+        medicionId = medicionId.toInt(),
+        fotoUri = fotoUri
     )
 }
