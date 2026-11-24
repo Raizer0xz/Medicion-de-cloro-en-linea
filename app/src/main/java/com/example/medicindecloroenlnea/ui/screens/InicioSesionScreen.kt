@@ -26,6 +26,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.medicindecloroenlnea.ui.components.CampoValidado
+import com.example.medicindecloroenlnea.domain.model.ValidacionFormulario
 import com.example.medicindecloroenlnea.ui.viewmodels.UsuarioViewModel
 
 @Composable
@@ -89,16 +90,28 @@ fun InicioSesionScreen(
             )
             Button(
                 onClick = {
-                    usuarioViewModel.iniciarSesion(correo, clave) { autenticado ->
-                        if (autenticado) {
-                            errorCorreo = null
-                            errorClave = null
-                            onInicioExitoso()
-                        } else {
-                            val errorCredenciales =
-                                "Correo o contraseña incorrectos. Crea una cuenta si aún no tienes una."
-                            errorCorreo = errorCredenciales
-                            errorClave = errorCredenciales
+                    errorCorreo = if (ValidacionFormulario.validarCorreo(correo)) {
+                        null
+                    } else {
+                        ValidacionFormulario.MENSAJE_CORREO_INVALIDO
+                    }
+                    errorClave = if (ValidacionFormulario.validarClave(clave)) {
+                        null
+                    } else {
+                        ValidacionFormulario.MENSAJE_CLAVE_VACIA
+                    }
+                    if (errorCorreo == null && errorClave == null) {
+                        usuarioViewModel.iniciarSesion(correo, clave) { autenticado ->
+                            if (autenticado) {
+                                errorCorreo = null
+                                errorClave = null
+                                onInicioExitoso()
+                            } else {
+                                val errorCredenciales =
+                                    "Correo o contraseña incorrectos. Revisa ambos campos."
+                                errorCorreo = errorCredenciales
+                                errorClave = errorCredenciales
+                            }
                         }
                     }
                 },

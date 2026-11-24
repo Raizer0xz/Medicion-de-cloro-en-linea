@@ -1,5 +1,9 @@
 package com.example.medicindecloroenlnea.navigation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -174,7 +178,9 @@ fun AppNavigation(
             NavHost(
                 navController = navController,
                 startDestination = AppRoutes.Login.route,
-                modifier = Modifier.padding(innerPadding)
+                modifier = Modifier.padding(innerPadding),
+                enterTransition = { fadeIn() + slideInHorizontally { it / 4 } },
+                exitTransition = { fadeOut() + slideOutHorizontally { -it / 4 } }
             ) {
                 composable(AppRoutes.Login.route) {
                     InicioSesionScreen(

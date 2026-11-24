@@ -16,7 +16,7 @@ import com.example.medicindecloroenlnea.data.local.CloroLocalDatabase
         MedicionRoomEntity::class,
         AlertaRoomEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class CloroRoomDatabase : RoomDatabase() {
@@ -26,6 +26,12 @@ abstract class CloroRoomDatabase : RoomDatabase() {
         internal val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 CloroSchemaMigration.upgradeFromVersionOne { db.execSQL(it) }
+            }
+        }
+
+        internal val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                CloroSchemaMigration.upgradeFromVersionTwo { db.execSQL(it) }
             }
         }
 
@@ -40,6 +46,7 @@ abstract class CloroRoomDatabase : RoomDatabase() {
                     CloroLocalDatabase.DATABASE_NAME
                 )
                     .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_2_3)
                     .build()
                     .also { instance = it }
             }

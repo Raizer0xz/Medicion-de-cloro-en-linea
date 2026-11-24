@@ -24,6 +24,13 @@ genera una alerta si el valor está fuera del rango normal. Para proteger la
 trazabilidad, los puntos con mediciones históricas no se pueden eliminar. Esta
 función usa Room sobre el archivo SQLite local existente.
 
+Los formularios muestran errores por campo y las mediciones se validan fuera de
+la interfaz. Al registrar una medición fuera de rango se puede habilitar una
+notificación local desde el permiso de Android. Las acciones correctivas
+admiten una foto desde la cámara o la galería; la imagen se copia al almacenamiento
+privado de la aplicación y su ubicación se conserva con la acción en SQLite.
+Los datos existentes se mantienen mediante la migración de base de datos.
+
 ## Ejecutar
 
 Abre en Android Studio la carpeta raíz que contiene `settings.gradle.kts` y

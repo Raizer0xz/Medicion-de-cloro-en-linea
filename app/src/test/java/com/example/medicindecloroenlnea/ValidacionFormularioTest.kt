@@ -27,4 +27,12 @@ class ValidacionFormularioTest {
         assertFalse(ValidacionFormulario.validarAccion(" \n "))
         assertTrue(ValidacionFormulario.validarAccion("Limpieza del sistema"))
     }
+
+    @Test
+    fun validaCorreoYContrasenaDelInicioDeSesionPorSeparado() {
+        assertTrue(ValidacionFormulario.validarCorreo(" persona@example.com "))
+        assertFalse(ValidacionFormulario.validarCorreo("correo-invalido"))
+        assertTrue(ValidacionFormulario.validarClave("clave"))
+        assertFalse(ValidacionFormulario.validarClave("  "))
+    }
 }

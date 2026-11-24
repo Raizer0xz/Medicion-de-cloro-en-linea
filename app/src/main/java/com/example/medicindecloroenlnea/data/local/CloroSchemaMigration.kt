@@ -1,6 +1,10 @@
 package com.example.medicindecloroenlnea.data.local
 
 internal object CloroSchemaMigration {
+    fun upgradeFromVersionTwo(executeSql: (String) -> Unit) {
+        executeSql("ALTER TABLE acciones ADD COLUMN foto_uri TEXT")
+    }
+
     fun upgradeFromVersionOne(executeSql: (String) -> Unit) {
         executeSql(
             """CREATE TABLE _room_v2_granjas (

@@ -129,6 +129,7 @@ class CloroRoomMigrationInstrumentedTest {
             databaseName
         )
             .addMigrations(CloroRoomDatabase.MIGRATION_1_2)
+            .addMigrations(CloroRoomDatabase.MIGRATION_2_3)
             .allowMainThreadQueries()
             .build()
 
@@ -142,6 +143,9 @@ class CloroRoomMigrationInstrumentedTest {
             val actionCount = roomDatabase.openHelper.readableDatabase
                 .query("SELECT COUNT(*) FROM acciones")
                 .use { cursor -> cursor.moveToFirst(); cursor.getInt(0) }
+            val actionPhoto = roomDatabase.openHelper.readableDatabase
+                .query("SELECT foto_uri FROM acciones WHERE id = 51")
+                .use { cursor -> cursor.moveToFirst(); cursor.getString(0) }
             val farmAssignmentCount = roomDatabase.openHelper.readableDatabase
                 .query("SELECT COUNT(*) FROM usuario_granjas")
                 .use { cursor -> cursor.moveToFirst(); cursor.getInt(0) }
@@ -149,6 +153,7 @@ class CloroRoomMigrationInstrumentedTest {
                 .query("PRAGMA foreign_key_check")
                 .use { cursor -> cursor.moveToFirst() }
             assertEquals(1, actionCount)
+            assertEquals(null, actionPhoto)
             assertEquals(1, farmAssignmentCount)
             assertFalse(foreignKeyViolations)
         } finally {

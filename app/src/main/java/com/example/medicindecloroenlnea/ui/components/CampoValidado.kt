@@ -1,7 +1,9 @@
 package com.example.medicindecloroenlnea.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -35,15 +37,17 @@ fun CampoValidado(
         },
         isError = errorMessage != null,
         supportingText = {
-            (errorMessage ?: supportingMessage)?.let { message ->
-                Text(
-                    text = message,
-                    color = if (errorMessage != null) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
+            Column {
+                AnimatedVisibility(visible = errorMessage != null) {
+                    errorMessage?.let { message ->
+                        Text(text = message, color = MaterialTheme.colorScheme.error)
                     }
-                )
+                }
+                if (errorMessage == null) {
+                    supportingMessage?.let { message ->
+                        Text(text = message, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
             }
         },
         singleLine = singleLine,

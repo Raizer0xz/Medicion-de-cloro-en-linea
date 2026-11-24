@@ -32,10 +32,12 @@ import com.example.medicindecloroenlnea.ui.components.CampoValidado
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medicindecloroenlnea.domain.model.DireccionDesviacion
+import com.example.medicindecloroenlnea.domain.model.EstadoCloro
 import com.example.medicindecloroenlnea.domain.model.Medicion
 import com.example.medicindecloroenlnea.domain.model.UsuarioUiState
 import com.example.medicindecloroenlnea.domain.model.formatearNivel
 import com.example.medicindecloroenlnea.ui.viewmodels.HistorialViewModel
+import com.example.medicindecloroenlnea.ui.notifications.NotificacionesCloro
 
 @Composable
 fun HistorialScreen(
@@ -45,6 +47,7 @@ fun HistorialScreen(
     historialViewModel: HistorialViewModel = viewModel()
 ) {
     val state by historialViewModel.uiState.collectAsStateWithLifecycle()
+    val notificar = NotificacionesCloro.rememberNotificador()
     var mostrarFormulario by rememberSaveable(puntoId) { mutableStateOf(false) }
     var mensaje by rememberSaveable(puntoId) { mutableStateOf<String?>(null) }
 
@@ -89,12 +92,18 @@ fun HistorialScreen(
         NuevaMedicionDialog(
             onDismiss = { mostrarFormulario = false },
             onSave = { value ->
-                historialViewModel.registrarMedicion(puntoId, value) { saved ->
+                historialViewModel.registrarMedicion(puntoId, value) { saved, status ->
                     mostrarFormulario = false
                     mensaje = if (saved) {
                         "Medición guardada localmente."
                     } else {
                         "No se pudo guardar. Revisa el rango permitido (0 a 20 mg/L) y tu acceso al punto."
+                    }
+                    if (saved && status != null && status != EstadoCloro.NORMAL) {
+                        notificar(
+                            puntoId,
+                            "Punto $puntoId: ${formatearNivel(value)} mg/L (${status.name.lowercase()})."
+                        )
                     }
                 }
             }
